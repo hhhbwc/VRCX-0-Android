@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive icon for launchers that request a round icon.
+
+  Identical structure to ic_launcher.xml: the round-ness comes from the
+  launcher's own mask, not from the artwork. Android picks this file up via
+  android:roundIcon in the manifest, and on API 26+ it is the mask rather than
+  this drawable that decides whether the result is a circle.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <monochrome android:drawable="@mipmap/ic_launcher_monochrome" />
+</adaptive-icon>

@@ -1,0 +1,45 @@
+[package]
+name = "vrcx-0-remote-server"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+description = "Headless VRCX-0 server exposing a network data plane"
+
+[[bin]]
+name = "vrcx-0-remote-server"
+path = "src/main.rs"
+
+[dependencies]
+axum = { version = "0.8", features = ["ws"] }
+futures-util = "0.3"
+rpassword = "7.5.4"
+tower-http = { version = "0.6", features = ["cors"] }
+rustls = { version = "0.23", features = ["aws_lc_rs"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+# Per-tenant bearer tokens are stored as digests, never as the token itself.
+sha2 = { workspace = true }
+tokio = { workspace = true, features = [
+    "macros",
+    "net",
+    "rt-multi-thread",
+    "signal",
+    "sync",
+    "time"
+] }
+tokio-util = { workspace = true, features = ["rt"] }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+vrcx-0-application-core = { path = "../application-core" }
+vrcx-0-application-activity = { path = "../application-activity" }
+vrcx-0-application = { path = "../application" }
+vrcx-0-application-realtime = { path = "../application-realtime" }
+vrcx-0-composition = { path = "../composition" }
+vrcx-0-contracts = { path = "../contracts" }
+vrcx-0-core = { path = "../core" }
+vrcx-0-local-server = { path = "../local-server" }
+vrcx-0-outbound-adapters = { path = "../outbound-adapters" }
+vrcx-0-persistence = { path = "../persistence" }
+vrcx-0-platform = { path = "../platform" }
+vrcx-0-remote-protocol = { path = "../remote-protocol" }
+vrcx-0-vrchat-client = { path = "../vrchat-client" }

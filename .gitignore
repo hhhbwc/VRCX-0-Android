@@ -1,0 +1,27 @@
+# Android
+android/build/
+android/app/build/
+android/.gradle/
+android/.kotlin/
+android/.cxx/
+android/.idea/
+android/captures/
+android/local.properties
+android/*.log
+android/*.apk
+android/*.aab
+android/*.jks
+
+# Rust
+crates/**/target/
+**/*.rs.bk
+
+# editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# local scratch
+*.tmp
+*.log

@@ -1,0 +1,2138 @@
+{
+ "app__current_user_refresh": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__ingest_user_facts": {
+  "args": [
+   "entries"
+  ],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__friend_profile_load_start": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__friend_profile_load_cancel": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__friend_log_names_resolve": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__friend_log_names_cancel": {
+  "args": [
+   "requestId"
+  ],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__my_avatars_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__my_avatar_by_id_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__vrc_status_get": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__vrc_status_refresh": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__share_collection_create": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__share_collection_preview": {
+  "args": [
+   "id"
+  ],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__world_open_register": {
+  "args": [
+   "worldId"
+  ],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__shared_collection_import_start": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__shared_collection_import_status": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__favorite_import_start": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__favorite_import_status": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__favorite_import_cancel": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__favorite_import_dismiss": {
+  "args": [
+   "runId"
+  ],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__group_ban_import_start": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__group_ban_import_status": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__group_ban_import_cancel": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__favorite_details_hydrate": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__favorite_cache_snapshot": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__avatar_content_tags_batch": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__group_membership_batch": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__group_moderation_batch": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__notification_mark_seen_batch": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__instance_invite_batch": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__notification_sync": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__user_groups_overview_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__group_calendar_snapshot_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__user_group_quick_moderation_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__user_group_quick_moderation_action": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__favorites_transfer_selection": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__favorites_remove_selection": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__backend_runtime_combined_snapshot_get": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "app_extra.rs"
+  ]
+ },
+ "app__vrchat_avatar_delete": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "avatars.rs"
+  ]
+ },
+ "app__vrchat_avatar_impostor_create": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "avatars.rs"
+  ]
+ },
+ "app__vrchat_avatar_impostor_delete": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "avatars.rs"
+  ]
+ },
+ "app__vrchat_avatar_moderation_delete": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "avatars.rs"
+  ]
+ },
+ "app__vrchat_avatar_moderation_send": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "avatars.rs"
+  ]
+ },
+ "app__vrchat_avatar_save": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "avatars.rs"
+  ]
+ },
+ "app__vrchat_avatar_select": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "avatars.rs"
+  ]
+ },
+ "app__vrchat_avatar_select_fallback": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "avatars.rs"
+  ]
+ },
+ "app__vrchat_avatar_moderations_get": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "avatars.rs"
+  ]
+ },
+ "app__vrchat_current_user_profile_update": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "current_user.rs"
+  ]
+ },
+ "app__vrchat_current_user_update": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "current_user.rs"
+  ]
+ },
+ "app__vrchat_current_user_badge_update": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "current_user.rs"
+  ]
+ },
+ "app__vrchat_current_user_tags_add": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "current_user.rs"
+  ]
+ },
+ "app__vrchat_current_user_tags_remove": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "current_user.rs"
+  ]
+ },
+ "app__external_api_avatar_search_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "external_api.rs"
+  ]
+ },
+ "app__external_api_youtube_video_metadata_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "external_api.rs"
+  ]
+ },
+ "app__external_api_github_releases_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "external_api.rs"
+  ]
+ },
+ "app__external_api_github_contributors_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "external_api.rs"
+  ]
+ },
+ "app__external_api_image_data_url_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "external_api.rs"
+  ]
+ },
+ "app__vrchat_favorite_add": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "favorites.rs"
+  ]
+ },
+ "app__vrchat_favorite_delete": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "favorites.rs"
+  ]
+ },
+ "app__vrchat_favorite_group_save": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "favorites.rs"
+  ]
+ },
+ "app__vrchat_favorite_group_clear": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "favorites.rs"
+  ]
+ },
+ "app__local_favorite_group_create": {
+  "args": [
+   "kind",
+   "groupName"
+  ],
+  "input": false,
+  "sources": [
+   "favorites.rs"
+  ]
+ },
+ "app__local_favorite_group_rename": {
+  "args": [
+   "kind",
+   "groupName",
+   "newGroupName"
+  ],
+  "input": false,
+  "sources": [
+   "favorites.rs"
+  ]
+ },
+ "app__local_favorite_group_delete": {
+  "args": [
+   "kind"
+  ],
+  "input": false,
+  "sources": [
+   "favorites.rs"
+  ]
+ },
+ "app__vrchat_group_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_user_groups_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_posts_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_member_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_members_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_members_search": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_gallery_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_bans_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_invites_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_join_requests_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_audit_log_types_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_logs_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_user_instances_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_post_create": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_post_edit": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_post_delete": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_join": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_leave": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_request_cancel": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_invite_send": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_member_kick": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_member_ban": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_member_unban": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_member_role_add": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_member_role_remove": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_invite_delete": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_join_request_respond": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_representation_set": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_member_props_set": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_block": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__vrchat_group_unblock": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "groups.rs"
+  ]
+ },
+ "app__activity_overlap_view": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__activity_page_view": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__activity_view": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_feed_history_cleanup": {
+  "args": [
+   "cutoffDate"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_feed_persistence_set_disabled": {
+  "args": [
+   "disabled"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_find_by_image_url": {
+  "args": [
+   "imageUrl"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_history_clear": {
+  "args": [
+   "userId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_history_list": {
+  "args": [
+   "userId",
+   "limit"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_tag_add": {
+  "args": [
+   "avatarId",
+   "tag",
+   "color"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_tag_remove": {
+  "args": [
+   "avatarId",
+   "tag"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_tag_update_color": {
+  "args": [
+   "avatarId",
+   "tag",
+   "color"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_tags_distinct": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_tags_get": {
+  "args": [
+   "avatarId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_tags_list": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_tags_patch": {
+  "args": [
+   "avatarId",
+   "patch"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_tags_remove_all": {
+  "args": [
+   "avatarId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_tags_replace": {
+  "args": [
+   "avatarId",
+   "entries"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_time_spent_add": {
+  "args": [
+   "userId",
+   "avatarId",
+   "timeSpent"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_time_spent_get": {
+  "args": [
+   "userId",
+   "avatarId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_time_spent_list": {
+  "args": [
+   "userId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__avatar_usage_ranking": {
+  "args": [
+   "userId",
+   "limit"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__browse_history_clear": {
+  "args": [
+   "ownerUserId",
+   "entityKind"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__browse_history_delete": {
+  "args": [
+   "ownerUserId",
+   "entityKind",
+   "entityId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__browse_history_query": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__browse_history_record": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__browse_history_retention_days_get": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__browse_history_retention_days_set": {
+  "args": [
+   "retentionDays"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__config_list_values": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__config_remove_value": {
+  "args": [
+   "key"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__config_set_values": {
+  "args": [
+   "entries"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__database_maintenance_broken_game_log_display_names_get": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__database_maintenance_broken_leave_entries_get": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__database_maintenance_max_friend_log_number_get": {
+  "args": [
+   "userId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__database_maintenance_table_sizes_get": {
+  "args": [
+   "userId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__favorite_list": {
+  "args": [
+   "kind"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__favorite_local_snapshot": {
+  "args": [
+   "kind"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__feed_latest_query": {
+  "args": [
+   "query"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__feed_persistence_set_disabled": {
+  "args": [
+   "disabled"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__feed_rows_query": {
+  "args": [
+   "query"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__feed_search_query": {
+  "args": [
+   "query"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__friend_log_current_list": {
+  "args": [
+   "userId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__friend_log_history_delete": {
+  "args": [
+   "userId",
+   "entry"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__friend_log_history_query": {
+  "args": [
+   "query"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__game_log_entry_delete": {
+  "args": [
+   "kind",
+   "entry"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__game_log_instance_delete": {
+  "args": [
+   "location",
+   "eventIds"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__game_log_instance_delete_by_location": {
+  "args": [
+   "location"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__game_log_previous_instances_by_group_id": {
+  "args": [
+   "groupId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__game_log_previous_instances_by_world_id": {
+  "args": [
+   "worldId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__game_log_query": {
+  "args": [
+   "query"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__game_log_sessions_query": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__instance_activity_dates_get": {
+  "args": [
+   "userId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__instance_activity_rows_get": {
+  "args": [
+   "startDate",
+   "endDate"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__instance_history_query": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__local_moderation_get": {
+  "args": [
+   "ownerUserId",
+   "userId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__local_moderation_list": {
+  "args": [
+   "ownerUserId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__memo_get_avatar": {
+  "args": [
+   "avatarId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__memo_get_user": {
+  "args": [
+   "userId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__memo_get_world": {
+  "args": [
+   "worldId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__memo_list_user_notes": {
+  "args": [
+   "ownerUserId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__memo_list_users": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__memo_save_avatar": {
+  "args": [
+   "avatarId",
+   "memo"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__memo_save_user": {
+  "args": [
+   "userId",
+   "memo"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__memo_save_world": {
+  "args": [
+   "worldId",
+   "memo"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__mutual_graph_fetch_cancel": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__mutual_graph_fetch_start": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__mutual_graph_friend_refresh": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__mutual_graph_snapshot_get": {
+  "args": [
+   "userId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__notification_add_v1": {
+  "args": [
+   "userId",
+   "notification"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__notification_add_v2": {
+  "args": [
+   "userId",
+   "notification"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__notification_delete": {
+  "args": [
+   "userId",
+   "id"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__notification_expire": {
+  "args": [
+   "userId",
+   "id"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__notification_list_query": {
+  "args": [
+   "query"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__notification_update_expired": {
+  "args": [
+   "userId",
+   "id",
+   "expired"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__notification_v2_expire": {
+  "args": [
+   "userId",
+   "id"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__notification_v2_mark_seen": {
+  "args": [
+   "userId",
+   "id"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__saved_group_collection_create": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__saved_group_collection_delete": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__saved_group_favorite_add": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__saved_group_favorite_remove": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__saved_group_favorites_get": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__user_mutual_friends_list_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__user_tables_ensure": {
+  "args": [
+   "userId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__world_friend_visits": {
+  "args": [
+   "worldId"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__world_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__world_summaries_get": {
+  "args": [
+   "worldIds"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__local_favorite_add": {
+  "args": [
+   "kind",
+   "entityId",
+   "groupName"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__local_favorite_remove": {
+  "args": [
+   "kind"
+  ],
+  "input": false,
+  "sources": [
+   "local.rs"
+  ]
+ },
+ "app__vrchat_auth_current_user_get": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "mod.rs"
+  ]
+ },
+ "app__vrchat_auth_visits_get": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "mod.rs"
+  ]
+ },
+ "app__vrchat_friend_status_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "mod.rs",
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_favorite_groups_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "mod.rs",
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_avatar_gallery_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "mod.rs",
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__game_log_entries_add": {
+  "args": [
+   "kind",
+   "entries"
+  ],
+  "input": false,
+  "sources": [
+   "mod.rs"
+  ]
+ },
+ "app__profile_backup_get_settings": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__profile_backup_set_settings": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__profile_backup_run_manual": {
+  "args": [
+   "targetPath"
+  ],
+  "input": false,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__profile_backup_retry_delivery": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__profile_backup_discard_pending": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__profile_backup_dismiss_error": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__profile_backup_current_status": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__profile_restore_validate": {
+  "args": [
+   "path"
+  ],
+  "input": false,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__profile_restore_request": {
+  "args": [
+   "expectedSha256"
+  ],
+  "input": false,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__profile_restore_discard_staged": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__profile_restore_take_last_result": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__profile_restore_rollback_state": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__profile_restore_clear_rollback": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__note_export_start": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__note_export_status": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__note_export_cancel": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "profile.rs"
+  ]
+ },
+ "app__notification_hide_and_expire": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__notification_request_invite_accept": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__notification_instance_invite_send": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__notification_invite_response_send": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__notification_boop_dismiss": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__notification_boop_reply": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__notification_respond_and_expire": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__social_unfriend": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__social_unfriend_selection": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__social_friend_request_send": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__social_friend_request_cancel": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__social_friend_request_notification_accept": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__moderation_sync_refresh": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__moderation_sync_update": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__social_baseline_refresh": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__social_favorites_baseline_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__social_friend_roster_baseline_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
+ "app__vrchat_avatar_styles_get": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_user_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_world_list_by_user_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_world_persistent_data_exists": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_world_save": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_world_delete": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_world_publish": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_world_unpublish": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_world_persistent_data_delete": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_tools_invite_messages_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_tools_invite_message_edit": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_avatar_list_by_user_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_prints_favorites_list": {
+  "args": [],
+  "input": false,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_prints_favorite_set": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_prints_favorites_set": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_media_inventory_items_collect": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_media_profile_decoration_unequip": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_extra.rs"
+  ]
+ },
+ "app__vrchat_user_profile_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_user_represented_group_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_instance_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_instance_short_name_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_instance_create": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_instance_self_invite": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_instance_close": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_favorite_worlds_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_search_worlds_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_search_users_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_search_groups_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_search_groups_strict_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_search_instance_short_name_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_request_invite_send": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_request_invite_photo_send": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_boop_send": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_tools_group_calendar_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_tools_following_calendars_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_tools_group_event_follow": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_tools_group_calendar_ics_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_tools_user_note_save": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_tools_user_report": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_avatar_file_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_files_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_file_delete": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_avatar_gallery_image_upload": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_sticker_upload": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_print_upload": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_asset_upload": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_prints_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_print_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_print_delete": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_inventory_items_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_inventory_template_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_profile_decoration_equip": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_user_inventory_item_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_inventory_item_update": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_inventory_bundle_consume": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_media_reward_redeem": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ },
+ "app__vrchat_auth_file_analysis_get": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "vrchat_remote.rs"
+  ]
+ }
+}

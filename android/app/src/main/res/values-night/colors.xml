@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Adaptive launcher icon background, dark theme.
+
+      Matches the plate of vrcx0-icon-1024-dark.png. Android applies the -night
+      qualifier to colour lookups too, so this pairs with the night foreground
+      in mipmap-night-*/ic_launcher_foreground.png. Without it the dark launcher
+      would draw a near-black bubble on the bright day plate and lose the
+      contrast the designer built in.
+    -->
+    <color name="ic_launcher_background">#121421</color>
+</resources>

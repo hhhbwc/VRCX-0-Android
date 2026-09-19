@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Adaptive launcher icon background.
+
+      Sampled from the brand plate in vrcx0-icon-1024.png. The adaptive icon
+      draws this colour edge to edge and lets the launcher's mask shape it, so
+      a plain colour is the correct source here, not the rounded-rect master:
+      using the master would paint its own rounded corners inside the mask and
+      produce a double-rounding seam.
+
+      See values-night/colors.xml for the dark-mode variant.
+    -->
+    <color name="ic_launcher_background">#333587</color>
+</resources>

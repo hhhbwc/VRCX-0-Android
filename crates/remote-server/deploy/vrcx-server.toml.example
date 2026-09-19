@@ -1,0 +1,26 @@
+# VRCX-0 remote server configuration
+#
+# Copy this file next to the server executable (or into the directory you
+# start it from) and rename it to `vrcx-server.toml`. Every key is optional;
+# anything left out keeps its default. Command-line flags override this file,
+# and environment variables sit in between.
+
+# Address and port to listen on.
+#   0.0.0.0:8790  -- every interface (default; fine behind a router/NAT)
+#   127.0.0.1:8790 -- local only; use when a reverse proxy or tunnel is in front
+bind = "0.0.0.0:8790"
+
+# Bearer token for the FIRST tenant only (a migration aid so old clients keep
+# working across an upgrade). Later tenants get their own token through
+# POST /v1/tenants. Leave empty if this is a fresh deployment.
+token = ""
+
+# Invite code required to claim any tenant after the first. Set this before
+# the server is reachable from the internet, or the first caller to reach
+# /v1/tenants claims it.
+invite = ""
+
+# Notes:
+#   - The data directory is still chosen with --data-dir <path> (or the
+#     platform default). Keep it off small flash storage on routers.
+#   - The file is a small TOML subset: `key = "value"` lines, `#` comments.

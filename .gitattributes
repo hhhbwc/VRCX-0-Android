@@ -1,0 +1,12 @@
+# Normalise line endings: the build scripts are executed on Linux, where a CRLF
+# shebang line fails with "bad interpreter".
+* text=auto eol=lf
+
+# Windows-only entry points keep CRLF.
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+
+*.jar binary
+*.png binary
+*.webp binary
+*.apk binary

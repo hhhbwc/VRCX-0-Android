@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive launcher icon (API 26+).
+
+  Layer split follows the original artwork rather than the flat master: the
+  launcher shapes the background itself, and the foreground carries only the
+  bubble + X. Pasting the flat master in here instead would place the plate's
+  own rounded corners inside the launcher's mask, giving a visible
+  "rounded corner inside a rounded corner" seam.
+
+  The monochrome layer is a flat black silhouette; Android 13+ tints it to
+  match the user's wallpaper palette, which is why it must not carry colour.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <monochrome android:drawable="@mipmap/ic_launcher_monochrome" />
+</adaptive-icon>

@@ -1,0 +1,16 @@
+VRCX-0 Remote (headless remote server + Android client)
+Copyright (c) 2026 VRCX-0 contributors.
+
+This repository is licensed under the GNU General Public License v3.0.
+See LICENSE for the full text.
+
+It is a companion to the VRCX-0 main repository:
+https://github.com/Map1en/VRCX-0
+
+Portions of VRCX-0 originate from VRCX.
+Copyright (c) 2019-2026 pypy and individual contributors.
+Those portions are licensed under the MIT License; the full text is in
+LICENSES/MIT.txt.
+
+VRChat is a trademark of VRChat Inc. This project is not affiliated with,
+endorsed by, or sponsored by VRChat Inc.
