@@ -1,12 +1,29 @@
 # VRCX-0 Android — Android 客户端 + 远程数据面
 
-VRCX-0 主仓库见 **[Map1en/VRCX-0](https://github.com/Map1en/VRCX-0)**（桌面端，Tauri + React + Rust）。
-本仓库是它的 **Android 瘦客户端**，外加客户端要连的那个服务端：
+> **这是什么**：原版 [VRCX](https://github.com/pypy-vrc/VRCX) 是一个跑在 Windows 桌面上的
+> 单体程序。这个项目把它**拆成了「服务端」和「客户端」两半**，让"记录数据"这件事不再依赖
+> 你的电脑开着。
+
+## 为什么拆开
+
+原版 VRCX 一个人干三件事：挂着 VRChat 会话 → 记录好友动态 / 世界 / 头像 / 游戏日志 → 给你看界面。
+好处是开箱即用，**代价是电脑必须一直开着 VRCX，数据才在记**；关掉、睡眠、换机器，记录就断了。
+
+作者（也就是我）想把它丢到云上去跑——24 小时在线、人在外面也能看、换机器不用搬家——
+于是把这两件事拆成了两个可以分开部署的东西：
+
+| | 干什么 | 跑在哪 | 目录 |
+|---|---|---|---|
+| **服务端**（headless） | 持有 VRChat 会话、落 SQLite、记录事件流；**没有界面** | 一台 VPS / NAS / 路由器 / Android（Termux），常年在线 | `crates/remote-server/` |
+| **客户端**（瘦） | 只负责看与操作，**不持有任何 VRChat 凭据**，所有数据来自你自己部署的服务端 | 手机（将来的 PC 客户端连同一个服务端） | `android/` |
+
+一句话：**"记录"从「我的电脑开着吗」变成了「服务器在跑吗」。**
+
+主仓库（桌面端，Tauri + React + Rust）见 **[Map1en/VRCX-0](https://github.com/Map1en/VRCX-0)**。
+本仓库的两块内容：
 
 | 目录 | 是什么 |
 |---|---|
-| `android/` | **Android 瘦客户端**（Kotlin + Compose）：不持有任何 VRChat 凭据，所有数据来自用户自部署的服务端 |
-| `crates/remote-server/` | **headless 服务端**：自己持有 VRChat 会话与 SQLite，把数据面暴露成 HTTP + WebSocket，供瘦客户端连接 |
 | `docs/` | 这两条线的设计文档与安全模型 |
 | `tools/` | 交叉编译、代码生成、端到端测试脚本 |
 
@@ -33,7 +50,25 @@ VRCX-0 主仓库见 **[Map1en/VRCX-0](https://github.com/Map1en/VRCX-0)**（桌�
 | Release | 内容 |
 | --- | --- |
 | `android-v0.1.0-p0` | 编译好的 Android APK（release + R8，debug keystore 签名，可 `adb install -r` 覆盖 debug 包并保留 token） |
-| `server-v0.1.0` | 服务端：裁剪过的工作区源码包（`cargo build -p vrcx-0-remote-server` 可直接编）+ x86_64 / aarch64 musl 静态二进制（含 deploy 脚本） |
+| `server-v0.1.0` | 服务端：裁剪过的工作区源码包（`cargo build -p vrcx-0-remote-server` 可直接编）+ **各架构预编译二进制** |
+
+服务端预编译二进制都是 **musl 静态链接**，不挑 glibc 版本，解压就能跑：
+
+| 目标三元组 | 适合 |
+| --- | --- |
+| `x86_64-unknown-linux-musl` | 云 VPS / 普通服务器 —— **绝大多数情况选这个** |
+| `aarch64-unknown-linux-musl` | ARM64 服务器、NAS、软路由、Android（Termux） |
+| `i686-unknown-linux-musl` | 32 位 x86 老机器 |
+| `armv7-unknown-linux-musleabihf` | 32 位 ARM：老 NAS、树莓派、OpenWrt |
+| `riscv64gc-unknown-linux-musl` | RISC-V 开发板 |
+
+**暂时没有 macOS / Windows 的预编译二进制**，只有源码包：
+
+- macOS 需要 Apple SDK，在 Windows 宿主上交叉不出来（要走 CI 的 macOS runner）；
+- Windows 目标在这台机器上 `cl.exe` 编 libwebp 失败、MinGW + zig 编 aws-lc 失败。
+
+想在别的架构上跑就下源码包自己 `cargo build -p vrcx-0-remote-server --release`，
+或者用 `tools/build-musl.ps1 -List` 看脚本支持哪些目标。有能用得上的 CI runner 欢迎 PR。
 
 两个都标了 pre-release：协议与命令名还会变，**服务端和客户端要一起升级**。
 

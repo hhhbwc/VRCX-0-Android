@@ -30,3 +30,5 @@ Thumbs.db
 dist/
 _stage/
 _*.py
+_build*
+*.out
