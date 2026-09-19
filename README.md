@@ -62,7 +62,7 @@
 | `armv7-unknown-linux-musleabihf` | 32 位 ARM：老 NAS、树莓派、OpenWrt |
 | `riscv64gc-unknown-linux-musl` | RISC-V 开发板 |
 
-**暂时没有 macOS / Windows 的预编译二进制**，只有源码包：
+**macOS / Windows 暂时没有预编译二进制**，只有源码包：
 
 - macOS 需要 Apple SDK，在 Windows 宿主上交叉不出来（要走 CI 的 macOS runner）；
 - Windows 目标在这台机器上 `cl.exe` 编 libwebp 失败、MinGW + zig 编 aws-lc 失败。
