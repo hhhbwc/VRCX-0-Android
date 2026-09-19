@@ -26,6 +26,17 @@ VRCX-0 主仓库见 **[Map1en/VRCX-0](https://github.com/Map1en/VRCX-0)**（桌�
                         └─────────────────────────────────────────┘
 ```
 
+## 下载（Releases）
+
+不想从源码开始的话，直接去 [Releases](https://github.com/hhhbwc/VRCX-0-Android/releases)：
+
+| Release | 内容 |
+| --- | --- |
+| `android-v0.1.0-p0` | 编译好的 Android APK（release + R8，debug keystore 签名，可 `adb install -r` 覆盖 debug 包并保留 token） |
+| `server-v0.1.0` | 服务端：裁剪过的工作区源码包（`cargo build -p vrcx-0-remote-server` 可直接编）+ x86_64 / aarch64 musl 静态二进制（含 deploy 脚本） |
+
+两个都标了 pre-release：协议与命令名还会变，**服务端和客户端要一起升级**。
+
 ## 状态：进行中，别当成品用
 
 这是**开发中的代码**，不是发布件：
