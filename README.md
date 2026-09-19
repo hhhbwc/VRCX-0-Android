@@ -1,14 +1,17 @@
-# VRCX-0 Remote — 远程数据面 + Android 客户端
+# VRCX-0 Android — Android 客户端 + 远程数据面
 
 VRCX-0 主仓库见 **[Map1en/VRCX-0](https://github.com/Map1en/VRCX-0)**（桌面端，Tauri + React + Rust）。
-本仓库放着两条**尚未并入主仓库**的线：
+本仓库是它的 **Android 瘦客户端**，外加客户端要连的那个服务端：
 
 | 目录 | 是什么 |
 |---|---|
-| `crates/remote-server/` | **headless 服务端**：自己持有 VRChat 会话与 SQLite，把数据面暴露成 HTTP + WebSocket，供瘦客户端连接 |
 | `android/` | **Android 瘦客户端**（Kotlin + Compose）：不持有任何 VRChat 凭据，所有数据来自用户自部署的服务端 |
+| `crates/remote-server/` | **headless 服务端**：自己持有 VRChat 会话与 SQLite，把数据面暴露成 HTTP + WebSocket，供瘦客户端连接 |
 | `docs/` | 这两条线的设计文档与安全模型 |
 | `tools/` | 交叉编译、代码生成、端到端测试脚本 |
+
+> 服务端放在这里只是因为**这个客户端现在只有它需要**；它是平台无关的，将来的 PC 客户端
+> 会连同一个服务端（那是另一个项目）。
 
 > 少部分生成物（`ArgForms.kt`、命令表、API 文档）的头部注释里还写着
 > `.workbuddy/scripts/...` —— 那是旧路径，脚本现在在 `tools/`。改注释会触发重新生成，

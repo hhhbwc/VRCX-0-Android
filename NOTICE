@@ -1,4 +1,4 @@
-VRCX-0 Remote (headless remote server + Android client)
+VRCX-0 Android (Android thin client + the headless remote server it talks to)
 Copyright (c) 2026 VRCX-0 contributors.
 
 This repository is licensed under the GNU General Public License v3.0.
