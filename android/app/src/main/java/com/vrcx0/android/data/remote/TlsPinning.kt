@@ -1,9 +1,21 @@
 package com.vrcx0.android.data.remote
 
-import okhttp3.CertificatePinner
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
+import java.security.KeyStore
+import java.security.MessageDigest
+import java.security.SecureRandom
+import java.security.cert.Certificate
+import java.security.cert.CertificateException
+import java.security.cert.X509Certificate
 import java.util.Base64
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.TrustManager
+import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509TrustManager
 
 /**
  * Pins the server's front end by its public key, so a self-signed certificate
@@ -21,6 +33,63 @@ import java.util.Base64
  * (`plink -hostkey SHA256:...`), which is why the fingerprint the operator
  * pastes is comparable across the two.
  *
+ * ## The handshake is where a pin has to be enforced
+ *
+ * A pin is enforced by the `X509TrustManager` the socket is built with, and by
+ * nothing else. [trustManager] is that enforcement: with a fingerprint
+ * configured it accepts the server's certificate if and only if the key matches,
+ * and refuses every other certificate -- including ones the system store would
+ * have accepted. With no fingerprint it is not installed at all and the
+ * platform's own validation applies, unchanged.
+ *
+ * That "and only that key" half matters. A rule of the shape "accept on a match,
+ * otherwise let the system decide" sounds safer and is not: against a
+ * certificate the system store already trusts -- anything with a real CA behind
+ * it -- it accepts a key the operator never pinned, so the pin becomes advisory
+ * and a machine that can answer for the address while presenting *some* valid
+ * certificate gets in. That is the exact attack a pin exists to prevent. Hence
+ * a mismatch is refused rather than referred onward.
+ *
+ * ## Why there is no `CertificatePinner` here
+ *
+ * There used to be one, and it is worth stating why it is gone, because adding
+ * it back looks obviously right and is not.
+ *
+ * OkHttp consults its `CertificatePinner` **after** the handshake has completed,
+ * against the peer certificate chain it read out of the session. On the JVM, and
+ * reliably reproducible against this project's own server, that chain comes back
+ * **empty**: the same session, read one step earlier from inside OkHttp's own
+ * hostname verifier, reports the certificate, while the `Handshake` object
+ * built a moment before holds nothing. A pinner with no chain to compare against
+ * matches nothing, so it fails closed -- every request dies with
+ *
+ * ```
+ * SSLPeerUnverifiedException: Certificate pinning failure!
+ *   Peer certificate chain:
+ *   Pinned certificates for 192.168.1.1:
+ *     sha256/<the correct pin>
+ * ```
+ *
+ * which names the right pin and no reason, and cannot be acted on. Against a
+ * certificate chain the system store trusts the same client reports four
+ * certificates and the pinner works, so this is specific to the self-signed
+ * case -- that is, to the only case this app has.
+ *
+ * So the pinner bought a second check that is unreachable where it is needed and
+ * broken where it is not, at the cost of an opaque total failure. The trust
+ * manager above already refuses anything but the pinned key, which is the
+ * guarantee; one enforcement point that holds beats two where one cannot.
+ * [TlsPinningTest] pins this decision down so it is not "fixed" back later.
+ *
+ * ## The name is not checked on a hit
+ *
+ * The certificate is issued to an IP address, and an address is not a name: a
+ * hostname check compares against the `SAN` dNSName entries, so it would fail
+ * on a perfectly correct certificate. On a pin hit the name check is therefore
+ * skipped, for the same reason the desktop client skips it. The pin has already
+ * established *which key* is on the other end, which is what a name was standing
+ * in for.
+ *
  * ## Which fingerprint
  *
  * The **SPKI** digest: SHA-256 over the SubjectPublicKeyInfo, Base64 encoded.
@@ -33,7 +102,7 @@ import java.util.Base64
  */
 object TlsPinning {
 
-    /** The only hash OkHttp pins by, and what Chromium's SPKI list takes. */
+    /** The only hash used here, and what Chromium's SPKI list takes. */
     const val HASH = "sha256"
 
     private const val KEY_BYTES = 32
@@ -93,22 +162,104 @@ object TlsPinning {
         }.getOrNull() ?: return Spki.Invalid(BASE64_HINT)
 
         if (bytes.size != KEY_BYTES) return Spki.Invalid(LENGTH_HINT)
-        // Re-encode so OkHttp receives the canonical form whatever was pasted.
+        // Re-encode so downstream receives the canonical form whatever was pasted.
         return Spki.Pin(Base64.getEncoder().encodeToString(bytes))
+    }
+
+    /**
+     * The SPKI SHA-256 of a certificate's public key, Base64 encoded -- the
+     * value a pin names, and the value [trustManager] compares against.
+     *
+     * Returns `null` for a certificate whose key cannot be encoded, which counts
+     * as a mismatch everywhere below: an unreadable key is not a reason to trust
+     * something.
+     *
+     * Also the only honest way to report a mismatch. When a connection fails
+     * because the server was reinstalled with a new key, the fingerprint it
+     * *did* present is what turns "it will not connect" into an actionable
+     * message, so it goes into the exception.
+     */
+    fun spkiSha256Base64(cert: Certificate): String? = runCatching {
+        // On X.509 this is the SubjectPublicKeyInfo DER, which is what the
+        // server-side `openssl x509 -pubkey | openssl pkey -pubin -outform der`
+        // prints the digest of.
+        val spki = cert.publicKey.encoded
+        Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(spki))
+    }.getOrNull()
+
+    /**
+     * Trust the pinned key and nothing else.
+     *
+     * Returns `null` when [pinBase64] is empty, so a caller with no pin cannot
+     * accidentally end up with a trust manager -- the absence of a pin stays the
+     * absence of a trust manager, exactly as in [apply].
+     */
+    fun trustManager(pinBase64: String?): X509TrustManager? {
+        if (pinBase64.isNullOrEmpty()) return null
+        val fallback = defaultTrustManager() ?: return null
+        return object : X509TrustManager {
+
+            override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+                // Only reached for a client certificate, which this app never
+                // presents. Delegated rather than accepted, so an unexpected one
+                // is still refused.
+                fallback.checkClientTrusted(chain, authType)
+            }
+
+            override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+                val observed = chain?.firstOrNull()?.let { spkiSha256Base64(it) }
+                if (observed != null && observed == pinBase64) return
+                // Refused, not referred onward. See the class comment: falling
+                // back to the system store here is what would turn the pin into
+                // a suggestion.
+                throw CertificateException(
+                    "服务器公钥与配置的指纹不符。" +
+                        "期望 $pinBase64，实际 ${observed ?: "无法读取服务器公钥"}。" +
+                        "如果服务器重新签发过证书，需要更新指纹。"
+                )
+            }
+
+            override fun getAcceptedIssuers(): Array<X509Certificate> = fallback.acceptedIssuers
+        }
+    }
+
+    /**
+     * A hostname verifier that accepts the name when the pin matches and defers
+     * to the platform otherwise.
+     *
+     * Returns `null` when there is no pin, and the caller then leaves OkHttp's
+     * own verifier in place -- an unpinned client must not gain a weaker name
+     * check as a side effect of this file existing.
+     *
+     * With a pin configured the deferral is unreachable in practice, because
+     * [trustManager] has already refused a mismatching certificate before the
+     * name is looked at. It is kept because this verifier is also correct on its
+     * own, and because the unpinned case must not change.
+     */
+    fun hostnameVerifier(pinBase64: String?): HostnameVerifier? {
+        if (pinBase64.isNullOrEmpty()) return null
+        return HostnameVerifier { hostname, session ->
+            val hit = runCatching {
+                val chain = session.peerCertificates
+                chain.isNotEmpty() && spkiSha256Base64(chain[0]) == pinBase64
+            }.getOrDefault(false)
+            hit || HttpsURLConnection.getDefaultHostnameVerifier().verify(hostname, session)
+        }
     }
 
     /**
      * Adds the pin to [builder], if there is one to add.
      *
      * Returns the builder untouched for an empty fingerprint, an unusable one,
-     * or a plaintext address. The last case matters: `CertificatePinner` is
-     * never consulted over `http`, so attaching one there would leave the code
-     * claiming a guarantee it does not provide. An unusable fingerprint is likewise
-     * a configuration mistake, and [warning] is where the user is told about it,
-     * rather than an exception surfacing from deep inside a request.
+     * or a plaintext address. The last case matters: there is no handshake to
+     * enforce anything in over `http`, so attaching a trust manager there would
+     * leave the code claiming a guarantee it does not provide. An unusable
+     * fingerprint is likewise a configuration mistake, and [warning] is where the
+     * user is told about it, rather than an exception surfacing from deep inside
+     * a request.
      *
-     * The result is that a client with no pinner is exactly a client whose
-     * traffic is not pinned -- there is no third state to misread.
+     * The result is that a client with no pin is exactly a client whose traffic
+     * is unpinned -- there is no third state to misread.
      */
     fun apply(
         builder: OkHttpClient.Builder,
@@ -117,10 +268,19 @@ object TlsPinning {
     ): OkHttpClient.Builder {
         if (!baseUrl.startsWith("https://", ignoreCase = true)) return builder
         val pin = parse(fingerprint) as? Spki.Pin ?: return builder
-        val host = baseUrl.toHttpUrlOrNull()?.host ?: return builder
-        return builder.certificatePinner(
-            CertificatePinner.Builder().add(host, "$HASH/${pin.base64}").build()
-        )
+        baseUrl.toHttpUrlOrNull() ?: return builder
+
+        // The socket factory and the verifier travel together: the factory
+        // decides which keys are acceptable at all, the verifier stops the name
+        // check from rejecting a certificate that was issued to an address. If
+        // the platform cannot build the socket factory, the builder is returned
+        // unchanged and [warning] is what the user sees -- a client claiming to
+        // be pinned while nothing enforces it is the one outcome worse than an
+        // unpinned client.
+        val trust = trustManager(pin.base64) ?: return builder
+        val factory = socketFactory(trust) ?: return builder
+        hostnameVerifier(pin.base64)?.let { builder.hostnameVerifier(it) }
+        return builder.sslSocketFactory(factory, trust)
     }
 
     /**
@@ -145,4 +305,17 @@ object TlsPinning {
                 else -> null
             }
         }
+
+    /** The platform's own trust decisions, for everything the pin does not cover. */
+    private fun defaultTrustManager(): X509TrustManager? = runCatching {
+        val factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+        factory.init(null as KeyStore?) // null == the system's root store
+        factory.trustManagers.filterIsInstance<X509TrustManager>().firstOrNull()
+    }.getOrNull()
+
+    private fun socketFactory(trust: X509TrustManager): SSLSocketFactory? = runCatching {
+        SSLContext.getInstance("TLS")
+            .apply { init(null, arrayOf<TrustManager>(trust), SecureRandom()) }
+            .socketFactory
+    }.getOrNull()
 }
