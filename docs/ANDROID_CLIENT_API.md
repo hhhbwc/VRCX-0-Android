@@ -20,7 +20,7 @@ Android App ──HTTP──> /v1/tenants  (领本机凭据；唯一的免鉴权
 | 协议版本 | `2`（`PROTOCOL_VERSION`） |
 | 传输 | HTTP/1.1 + WebSocket，JSON |
 | 鉴权 | `Authorization: Bearer <token>`；WS 用 `?token=` 查询参数 |
-| 命令总数 | 278 条（服务端实现）/ 501 条（桌面全量） |
+| 命令总数 | 279 条（服务端实现）/ 504 条（桌面全量） |
 
 ### 端点
 
@@ -318,7 +318,7 @@ WebSocket。浏览器/部分客户端无法自定义 header，故 token 走查�
 服务端不重放历史事件，客户端应在重连成功后主动调一次全量查询
 （如 `app__backend_runtime_combined_snapshot_get`）重新对齐状态。
 
-## 5. 命令清单（278 条，按功能分组）
+## 5. 命令清单（279 条，按功能分组）
 
 参数列：`input` 表示整体对象形态；否则列出扁平参数名；`-` 表示无参。
 
@@ -701,7 +701,7 @@ WebSocket。浏览器/部分客户端无法自定义 header，故 token 走查�
 | `app__vrc_status_get` | — |
 | `app__vrc_status_refresh` | — |
 
-### 其他（9）
+### 其他（10）
 
 | 命令 | 参数 |
 |---|---|
@@ -709,15 +709,16 @@ WebSocket。浏览器/部分客户端无法自定义 header，故 token 走查�
 | `app__note_export_cancel` | — |
 | `app__note_export_start` | `input` |
 | `app__note_export_status` | — |
+| `app__quick_search_query` | `input` |
 | `app__user_groups_overview_get` | `input` |
 | `app__vrchat_boop_send` | `input` |
 | `app__vrchat_friend_status_get` | `input` |
 | `app__vrchat_request_invite_photo_send` | `input` |
 | `app__vrchat_request_invite_send` | `input` |
 
-## 6. 未迁移命令与 Android 可用性（223 条）
+## 6. 未迁移命令与 Android 可用性（225 条）
 
-桌面端共 501 条命令，服务端实现 278 条。剩余 223 条分两类：
+桌面端共 504 条命令，服务端实现 279 条。剩余 225 条分两类：
 
 ### 6.1 桌面专属 —— Android 本就不需要
 
@@ -731,7 +732,6 @@ WebSocket。浏览器/部分客户端无法自定义 header，故 token 走查�
 
 | 命令 | 缺失后影响 |
 |---|---|
-| `app__quick_search_query` | 全局搜索不可用（手机端高频功能） |
 | `app__player_list_current_snapshot` | 看不到当前房间的实时玩家列表（依赖本地游戏状态） |
 | `app__ancillary_runtime_snapshot_get` | 登录水合失败会导致界面卡在加载态 |
 | `app__get_vrchat_user_moderation` | 用户审核状态读不到 |

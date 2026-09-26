@@ -1,4 +1,4 @@
-# Cross-compile vrcx-0-remote-server for Linux musl targets (static ELF) and Windows.
+﻿# Cross-compile vrcx-0-remote-server for Linux musl targets (static ELF) and Windows.
 #
 # Default target is x86_64-unknown-linux-musl: the reference deployment is a KVM VPS
 # (Ubuntu 24.04 / x86_64). Pass -Target <triple> for anything else; run -List to see

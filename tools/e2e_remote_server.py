@@ -293,6 +293,30 @@ def phase_multi_tenant(work: str) -> None:
     check("  ...and 405 for a wrong method on a real route", 405,
           call("GET", "/v1/tenants/token", token_a).status)
 
+    # ---- forwarded commands: the data plane the thin clients use ----------
+    section("forwarded commands")
+    h = call("GET", "/v1/health")
+    check("the capability list advertises quick search", True,
+          "app__quick_search_query" in (h.json("commands.supported") or []))
+    # 502 (not 501) is the contract here: 501 = "not migrated, run it locally",
+    # 502 = "recognised but failed". A degraded tenant has no VRChat session,
+    # so the scope gate is what must refuse -- with a readable reason.
+    qs = call("POST", "/v1/command", token_a, payload={
+        "command": "app__quick_search_query",
+        "args": {"input": {"query": "test"}},
+    })
+    check("quick search answers 502 for a signed-out tenant (never 501)", 502, qs.status)
+    check("  ...and the reason is the scope gate, not a crash", True,
+          "requires an authenticated session" in qs.body)
+    malformed = call("POST", "/v1/command", token_a, payload={
+        "command": "app__quick_search_query",
+        "args": {},
+    })
+    check("quick search without input reports the argument, not a 404", 502,
+          malformed.status)
+    check("  ...naming what is missing", True,
+          "missing" in malformed.body and "input" in malformed.body)
+
     # ---- rotation revokes the old credential ------------------------------
     section("rotation")
     rotated = call("POST", "/v1/tenants/token", token_a, payload={})
@@ -325,7 +349,7 @@ def phase_multi_tenant(work: str) -> None:
     code, out = operator(data, "--list-tenants", "--revoke-tenant", tenant_b)
     check("asking to list and revoke at once is refused", 2, code)
     check("  ...with an explanation", True,
-          "cannot be combined" in out or "ambiguous" in out.lower())
+          "only one operator command" in out)
 
     code, _ = operator(data, "--revoke-tenant", tenant_b)
     check("--revoke-tenant succeeds", 0, code)

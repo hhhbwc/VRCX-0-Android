@@ -1736,6 +1736,13 @@
    "social.rs"
   ]
  },
+ "app__quick_search_query": {
+  "args": [],
+  "input": true,
+  "sources": [
+   "social.rs"
+  ]
+ },
  "app__vrchat_avatar_styles_get": {
   "args": [],
   "input": false,

@@ -57,6 +57,7 @@ object ArgForms {
         "app__notification_request_invite_accept",
         "app__notification_respond_and_expire",
         "app__profile_backup_set_settings",
+        "app__quick_search_query",
         "app__saved_group_collection_create",
         "app__saved_group_collection_delete",
         "app__saved_group_favorite_add",
