@@ -298,6 +298,11 @@ async fn stream_events(app_version: Arc<str>, tenant: Arc<TenantRuntime>, socket
     let hello = StreamFrame::Hello {
         protocol_version: PROTOCOL_VERSION,
         app_version: app_version.to_string(),
+        // The session id a thin client must echo back on baseline calls —
+        // without it the realtime runtime rejects every baseline as
+        // superseded, and the only other way to learn it is a self
+        // user-update event a quiet session may not produce for hours.
+        websocket: tenant.state.realtime_runtime().active_session_websocket(),
     };
     if write_frame(&mut sender, &hello).await.is_err() {
         return;

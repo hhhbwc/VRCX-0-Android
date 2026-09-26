@@ -159,6 +159,7 @@ mod tests {
         let encoded = serde_json::to_value(StreamFrame::Hello {
             protocol_version: PROTOCOL_VERSION,
             app_version: "0.1.0".into(),
+            websocket: String::new(),
         })
         .unwrap();
 
