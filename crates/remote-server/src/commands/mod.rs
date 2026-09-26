@@ -115,6 +115,13 @@ const HAND_WRITTEN_COMMANDS: &[&str] = &[
     "app__game_log_entries_add",
 ];
 
+/// Builds the per-tenant quick-search runtime (see `social::quick_search_runtime`).
+pub(crate) fn quick_search_runtime(
+    runtime: &RuntimeHostState,
+) -> vrcx_0_application::social::QuickSearchRuntime {
+    social::quick_search_runtime(runtime)
+}
+
 /// The commands this server can run.
 ///
 /// Split out from [`dispatch`] so membership is testable without standing up a
@@ -150,10 +157,11 @@ fn parse_command(name: &str) -> Option<CommandKind> {
 pub async fn dispatch(
     runtime: &RuntimeHostState,
     local: &LocalDataRuntime,
+    quick_search: &vrcx_0_application::social::QuickSearchRuntime,
     request: CommandRequest,
 ) -> CommandResult {
     STATS.calls.fetch_add(1, Ordering::Relaxed);
-    let result = run(runtime, local, request).await;
+    let result = run(runtime, local, quick_search, request).await;
     match &result {
         CommandResult::Ok(_) => STATS.ok.fetch_add(1, Ordering::Relaxed),
         CommandResult::NotImplemented => STATS.unimplemented.fetch_add(1, Ordering::Relaxed),
@@ -165,6 +173,7 @@ pub async fn dispatch(
 async fn run(
     runtime: &RuntimeHostState,
     local: &LocalDataRuntime,
+    quick_search: &vrcx_0_application::social::QuickSearchRuntime,
     request: CommandRequest,
 ) -> CommandResult {
     // Generated per-area tables first: they cover far more commands than the
@@ -190,7 +199,9 @@ async fn run(
     if let Some(result) = current_user::dispatch(runtime, &request.command, &request.args).await {
         return result;
     }
-    if let Some(result) = social::dispatch(runtime, &request.command, &request.args).await {
+    if let Some(result) = social::dispatch(runtime, quick_search, &request.command, &request.args)
+        .await
+    {
         return result;
     }
     if let Some(result) = profile::dispatch(runtime, &request.command, &request.args).await {

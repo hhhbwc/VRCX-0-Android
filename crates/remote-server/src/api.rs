@@ -189,7 +189,7 @@ async fn handle_command(
 ) -> Response {
     let runtime = tenant.rpc.runtime();
     let local = tenant.rpc.local_data();
-    match commands::dispatch(runtime.as_ref(), local, request).await {
+    match commands::dispatch(runtime.as_ref(), local, tenant.quick_search(), request).await {
         CommandResult::Ok(value) => Json(value).into_response(),
         CommandResult::NotImplemented => (
             StatusCode::from_u16(COMMAND_NOT_IMPLEMENTED)

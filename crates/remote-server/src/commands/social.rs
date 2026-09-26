@@ -25,7 +25,8 @@ use vrcx_0_application::social::{
     ModerationSyncMutationInput, ModerationSyncRefreshInput, ModerationSyncRuntime,
     NotificationBoopDismissInput, NotificationBoopReplyInput, NotificationHideExpireInput,
     NotificationInstanceInviteInput, NotificationInviteResponseInput,
-    NotificationRequestInviteAcceptInput, NotificationRespondInput, SocialFriendMutationInput,
+    NotificationRequestInviteAcceptInput, NotificationRespondInput, QuickSearchQueryInput,
+    QuickSearchRuntime, QuickSearchSources, SocialFriendMutationInput,
     SocialFriendRequestAcceptInput, SocialFriendRequestCancelInput, SocialMutationDeps,
     SocialUnfriendBatchInput,
 };
@@ -39,9 +40,10 @@ use vrcx_0_application_realtime::{
 };
 use vrcx_0_composition::RuntimeHostState;
 use vrcx_0_outbound_adapters::{
-    LocalMediaUploadAdapter, LocalModerationSyncStore, LocalNotificationChainActions,
-    PersistenceRealtimeStore, VrchatModerationSyncRemoteRequests, VrchatRealtimeRemoteRequests,
-    VrchatRequestAdapter, VrchatSocialMutationRemoteRequests,
+    LocalAvatarApplicationAdapter, LocalMediaUploadAdapter, LocalModerationSyncStore,
+    LocalNotificationChainActions, LocalQuickSearchDetailStore, PersistenceRealtimeStore,
+    VrchatAvatarRemote, VrchatModerationSyncRemoteRequests, VrchatQuickSearchRemoteRequests,
+    VrchatRealtimeRemoteRequests, VrchatRequestAdapter, VrchatSocialMutationRemoteRequests,
 };
 use vrcx_0_persistence::DatabaseService;
 
@@ -69,6 +71,8 @@ pub const COMMANDS: &[&str] = &[
     "app__social_baseline_refresh",
     "app__social_favorites_baseline_get",
     "app__social_friend_roster_baseline_get",
+    // quick search
+    "app__quick_search_query",
 ];
 
 /// Server-side counterpart of `DesktopSocialRuntime`: the same deps bundles,
@@ -174,8 +178,41 @@ where
     run(&actions).await
 }
 
+/// Builds the quick-search runtime the same way the desktop shell does
+/// (`runtime-host-desktop::DesktopRuntime::quick_search_runtime`), from the
+/// pieces `composition` already shares.
+///
+/// The runtime caches its remote working set (own/favorite avatars, worlds,
+/// groups) for a minute, so the caller holds one per tenant instead of
+/// rebuilding per request — a rebuilt one would re-pull every page on each
+/// keystroke.
+pub(crate) fn quick_search_runtime(runtime: &RuntimeHostState) -> QuickSearchRuntime {
+    let assembly = runtime.desktop_assembly();
+    let db = Arc::clone(runtime.database());
+    let web = Arc::clone(runtime.web_client());
+    let avatar_adapter = Arc::new(LocalAvatarApplicationAdapter::new(Arc::clone(&db)));
+    QuickSearchRuntime::new(
+        QuickSearchSources::new(
+            Arc::new(LocalQuickSearchDetailStore::new(db)),
+            Arc::new(VrchatQuickSearchRemoteRequests),
+            avatar_adapter,
+            Arc::new(VrchatAvatarRemote::new(
+                web,
+                assembly.diagnostics().clone(),
+                assembly.sync().clone(),
+            )),
+            Arc::clone(assembly.world_cache()),
+        ),
+        Arc::new(VrchatRequestAdapter::new(Arc::clone(runtime.web_client()))),
+        assembly.auth_scope().clone(),
+        assembly.diagnostics().clone(),
+        assembly.sync().clone(),
+    )
+}
+
 pub async fn dispatch(
     runtime: &RuntimeHostState,
+    quick_search: &QuickSearchRuntime,
     command: &str,
     args: &JsonValue,
 ) -> Option<CommandResult> {
@@ -377,6 +414,17 @@ pub async fn dispatch(
                 Ok(output) => Some(encode(Ok(output))),
                 Err(error) => Some(CommandResult::Failed(error.to_string())),
             }
+        }
+        // -- quick search ---------------------------------------------------
+        "app__quick_search_query" => {
+            let input: QuickSearchQueryInput = match parse_required(args) {
+                Ok(input) => input,
+                Err(error) => return Some(CommandResult::Failed(error)),
+            };
+            // Same shape as the desktop binding: the friend half searches the
+            // live realtime snapshot, not the database.
+            let snapshot = social.realtime.friend_snapshot();
+            Some(encode(quick_search.query(input, snapshot).await))
         }
         _ => None,
     }
