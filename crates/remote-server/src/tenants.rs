@@ -11,7 +11,8 @@
 //!   * its own data directory, and therefore its own SQLite database;
 //!   * its own `RuntimeHostState`, and therefore its own VRChat session;
 //!   * its own event bus, so `/v1/stream` never leaks another user's events;
-//!   * its own bearer token, which can be rotated or revoked on its own.
+//!   * its own bearer tokens: a primary one (rotatable on its own) plus
+//!     one per device that joined the account through an invite.
 //!
 //! This is possible without touching the composition layer because
 //! `RuntimeHostState` keeps no process-global state at all - every field is an
@@ -23,12 +24,13 @@
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, OnceLock, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+use vrcx_0_application::social::QuickSearchRuntime;
 use vrcx_0_composition::{RuntimeHostOptions, RuntimeHostProfile, RuntimeHostState};
 use vrcx_0_local_server::{generate_token, tokens_match};
 use vrcx_0_platform::app_paths::{AppDataDirResolution, AppDataDirSource};
@@ -98,6 +100,14 @@ pub struct TenantRecord {
     pub label: String,
     /// Hex SHA-256 of the bearer token.
     pub token_sha256: String,
+    /// Hex SHA-256 digests of additional device tokens for this tenant.
+    ///
+    /// Minted when a device joins through a `join` invite: the device gets
+    /// a credential of its own into the same account, and removing it does
+    /// not disturb the primary token. Rotation replaces the primary; this
+    /// list is the "other devices" side of the account.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub device_token_sha256: Vec<String>,
     /// Unix seconds.
     pub created_at: u64,
     /// Set when an operator suspends a tenant; login and commands are refused
@@ -160,11 +170,21 @@ pub struct TenantRuntime {
     pub status: RuntimeStatus,
     pub relay: LogRelay,
     pub auth: AuthCoordinator,
+    /// Built on first use: the quick-search runtime caches its remote working
+    /// set, so one instance lives as long as the tenant does.
+    quick_search: OnceLock<QuickSearchRuntime>,
 }
 
 impl TenantRuntime {
     pub fn id(&self) -> String {
         self.read_record().id.clone()
+    }
+
+    /// The tenant's quick-search runtime, built on first use from the same
+    /// pieces the desktop shell uses (see `commands::quick_search_runtime`).
+    pub fn quick_search(&self) -> &QuickSearchRuntime {
+        self.quick_search
+            .get_or_init(|| crate::commands::quick_search_runtime(&self.state))
     }
 
     pub fn label(&self) -> String {
@@ -193,8 +213,27 @@ impl TenantRuntime {
         record.token_sha256 = digest;
     }
 
-    fn token_digest(&self) -> String {
-        self.read_record().token_sha256.clone()
+    /// Whether `digest` (hex SHA-256) is one of this tenant's credentials.
+    ///
+    /// The primary token plus every device token, each compared in
+    /// constant time. The list is small and operator-controlled, so a
+    /// linear walk is not a timing concern the way an unbounded search
+    /// would be.
+    pub fn accepts_digest(&self, digest: &str) -> bool {
+        let record = self.read_record();
+        tokens_match(&record.token_sha256, digest)
+            || record
+                .device_token_sha256
+                .iter()
+                .any(|existing| tokens_match(existing, digest))
+    }
+
+    fn add_device_token_digest(&self, digest: String) {
+        let mut record = self
+            .record
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        record.device_token_sha256.push(digest);
     }
 
     /// Builds the runtime without starting the VRChat backend. Kept synchronous
@@ -262,6 +301,7 @@ impl TenantRuntime {
             status,
             relay,
             auth: AuthCoordinator::new(),
+            quick_search: OnceLock::new(),
         })
     }
 
@@ -316,6 +356,9 @@ pub struct TenantRegistry {
     /// Digest -> tenant id, so an unauthenticated lookup never compares against
     /// every tenant in turn.
     by_token: RwLock<HashMap<String, String>>,
+    /// Serialises admission so two simultaneous claims cannot both consume
+    /// the last use of a single-use code, or race for the same label.
+    admission: std::sync::Mutex<()>,
 }
 
 impl TenantRegistry {
@@ -352,6 +395,7 @@ impl TenantRegistry {
             file: RwLock::new(file),
             live: RwLock::new(HashMap::new()),
             by_token: RwLock::new(HashMap::new()),
+            admission: std::sync::Mutex::new(()),
         };
 
         let records: Vec<TenantRecord> = registry.file.read().unwrap().tenants.clone();
@@ -361,11 +405,12 @@ impl TenantRegistry {
             }
             match TenantRuntime::build(record.clone(), data_root, app_version) {
                 Ok(runtime) => {
-                    registry
-                        .by_token
-                        .write()
-                        .unwrap()
-                        .insert(record.token_sha256.clone(), record.id.clone());
+                    let mut by_token = registry.by_token.write().unwrap();
+                    by_token.insert(record.token_sha256.clone(), record.id.clone());
+                    for digest in &record.device_token_sha256 {
+                        by_token.insert(digest.clone(), record.id.clone());
+                    }
+                    drop(by_token);
                     registry.live.write().unwrap().insert(record.id.clone(), Arc::new(runtime));
                 }
                 Err(error) => {
@@ -461,7 +506,7 @@ impl TenantRegistry {
         // timing signal cannot be used to walk the digest space.
         let live = self.live.read().unwrap();
         let runtime = live.get(&id)?;
-        if tokens_match(&runtime.token_digest(), &digest) {
+        if runtime.accepts_digest(&digest) {
             Some(Arc::clone(runtime))
         } else {
             None
@@ -485,8 +530,9 @@ impl TenantRegistry {
     /// Admission is enforced here rather than by a separate check so there is
     /// no way to reach the create path without passing it: the first tenant on
     /// a fresh server needs no code, so an operator can bring the server up
-    /// alone, and every later one must present the code the operator started
-    /// with. Without that, anyone who could reach the port could provision an
+    /// alone, and every later one must present a code the operator issued —
+    /// the legacy server-wide code, or a per-code invite from the store.
+    /// Without that, anyone who could reach the port could provision an
     /// account on somebody else's server.
     pub fn create(
         &self,
@@ -494,12 +540,51 @@ impl TenantRegistry {
         invite: Option<&str>,
         token: Option<&str>,
     ) -> Result<(Arc<TenantRuntime>, String), TenantError> {
-        // Bootstrap: allow the first tenant without a code, require one after.
+        // Claims are rare and admission reads a file, so they are serialised
+        // as a whole: two simultaneous claims must not both consume the
+        // last use of a single-use code, or race for the same label.
+        let _admission = self
+            .admission
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+
+        // Admission, for every claim after the first. Codes live in
+        // `invites.json` and are read fresh on each claim, so a running
+        // server picks up `--generate-invite` without a restart. Two kinds
+        // exist: one opens a new account (this function's normal path
+        // below), one joins an existing account (handled just after). The
+        // legacy server-wide code keeps working as an unlimited
+        // new-account invite so deployments that set one need no change.
+        let mut consume_code: Option<String> = None;
+        let mut joins_tenant: Option<String> = None;
         if !self.is_empty() {
-            match (self.invite_code.as_deref(), invite) {
-                (Some(expected), Some(supplied)) if tokens_match(supplied, expected) => {}
-                _ => return Err(TenantError::AdmissionDenied),
+            let invites = crate::invites::read_invites(&self.data_root)?;
+            let supplied = invite.map(str::trim).filter(|value| !value.is_empty());
+            match crate::invites::resolve_admission(
+                &invites,
+                self.invite_code.as_deref(),
+                supplied,
+            )? {
+                crate::invites::Admission::New { invite_code } => consume_code = invite_code,
+                crate::invites::Admission::Join {
+                    tenant_id,
+                    invite_code,
+                } => {
+                    joins_tenant = Some(tenant_id);
+                    consume_code = Some(invite_code);
+                }
             }
+        }
+
+        if let Some(target_id) = joins_tenant {
+            // A join claim creates nothing: it mints one more device token
+            // for the account the code names. The account, its data and its
+            // primary token are untouched.
+            let (runtime, token) = self.mint_device_token(&target_id)?;
+            if let Some(code) = consume_code.as_deref() {
+                self.consume_invite_use(code)?;
+            }
+            return Ok((runtime, token));
         }
 
         let label = label.trim();
@@ -535,6 +620,7 @@ impl TenantRegistry {
             created_at: unix_now(),
             disabled: false,
             data_dir: None,
+            device_token_sha256: Vec::new(),
         };
 
         let runtime = Arc::new(TenantRuntime::build(
@@ -557,6 +643,11 @@ impl TenantRegistry {
             .unwrap()
             .insert(record.id.clone(), Arc::clone(&runtime));
 
+        if let Some(code) = consume_code.as_deref() {
+            // Counted only after the tenant exists: a failed claim must not
+            // burn a use of a single-use code.
+            self.consume_invite_use(code)?;
+        }
         Ok((runtime, token))
     }
 
@@ -594,6 +685,7 @@ impl TenantRegistry {
             created_at: unix_now(),
             disabled: false,
             data_dir: Some(data_dir.to_string_lossy().into_owned()),
+            device_token_sha256: Vec::new(),
         };
 
         let runtime = Arc::new(TenantRuntime::build(
@@ -650,6 +742,56 @@ impl TenantRegistry {
             runtime.set_token_digest(digest);
         }
         Ok(token)
+    }
+
+    /// Issues one more bearer token for an existing tenant — the `join`
+    /// half of an invite. Several devices (or friends joining the same
+    /// account) each get a credential of their own; the primary token is
+    /// untouched and rotation still replaces only that one.
+    pub fn mint_device_token(
+        &self,
+        id: &str,
+    ) -> Result<(Arc<TenantRuntime>, String), TenantError> {
+        let runtime = self
+            .live
+            .read()
+            .unwrap()
+            .get(id)
+            .cloned()
+            .ok_or_else(|| TenantError::NotFound(id.to_string()))?;
+
+        let token = generate_token().map_err(|e| TenantError::Runtime(e.to_string()))?;
+        let digest = token_digest(&token);
+        if self.by_token.read().unwrap().contains_key(&digest) {
+            return Err(TenantError::Duplicate("that bearer token".to_string()));
+        }
+
+        {
+            let mut file = self.file.write().unwrap();
+            let Some(record) = file.tenants.iter_mut().find(|tenant| tenant.id == id) else {
+                return Err(TenantError::NotFound(id.to_string()));
+            };
+            record.device_token_sha256.push(digest.clone());
+            self.persist_locked(&file)?;
+        }
+        // The live runtime caches its own digests for the constant-time
+        // compare, so it has to learn the new one before the map hands the
+        // tenant out on it.
+        runtime.add_device_token_digest(digest.clone());
+        self.by_token.write().unwrap().insert(digest, id.to_string());
+        Ok((runtime, token))
+    }
+
+    /// Counts one use of an invite code. A code that has vanished is
+    /// ignored: the store is read fresh per claim, and an operator deleting
+    /// a code mid-claim is their prerogative, not the claimant's problem.
+    fn consume_invite_use(&self, code: &str) -> Result<(), TenantError> {
+        let mut invites = crate::invites::read_invites(&self.data_root)?;
+        if let Some(record) = invites.iter_mut().find(|invite| invite.code == code) {
+            record.used = record.used.saturating_add(1);
+            crate::invites::write_invites(&self.data_root, &invites)?;
+        }
+        Ok(())
     }
 
     fn persist_locked(&self, file: &RegistryFile) -> Result<(), TenantError> {

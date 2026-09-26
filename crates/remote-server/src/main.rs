@@ -3,6 +3,7 @@ mod auth;
 mod commands;
 mod deps;
 mod events;
+mod invites;
 mod relay;
 mod rpc;
 mod runtime_status;
@@ -79,7 +80,7 @@ async fn async_main() -> ExitCode {
     // else: binding the port would fight the live process, and building every
     // tenant would make it fight for each profile lock.
     if let Some(command) = options.operator_command() {
-        return run_operator_command(command, &data_root);
+        return run_operator_command(command, &data_root, options.invite_code.as_deref());
     }
 
     let app_version = product_app_version();
@@ -224,11 +225,20 @@ fn stop_all(registry: &TenantRegistry, reason: &str) {
     }
 }
 
-/// Runs `--list-tenants` / `--revoke-tenant` and exits.
-fn run_operator_command(command: OperatorCommand, data_root: &Path) -> ExitCode {
+/// Runs one of the operator commands (list/revoke tenants, invite codes) and
+/// exits. `legacy_invite` is the server-wide `--invite` value, if the
+/// invocation was given one; generated codes avoid colliding with it.
+fn run_operator_command(
+    command: OperatorCommand,
+    data_root: &Path,
+    legacy_invite: Option<&str>,
+) -> ExitCode {
     match command {
         OperatorCommand::Ambiguous => {
-            eprintln!("--list-tenants and --revoke-tenant cannot be combined");
+            eprintln!(
+                "only one operator command can run per invocation: --list-tenants, \
+                 --revoke-tenant, --list-invites, --generate-invite, --revoke-invite"
+            );
             ExitCode::from(2)
         }
         OperatorCommand::ListTenants => match tenants::read_records(data_root) {
@@ -284,6 +294,182 @@ fn run_operator_command(command: OperatorCommand, data_root: &Path) -> ExitCode 
                 }
             }
         }
+        OperatorCommand::ListInvites => match invites::read_invites(data_root) {
+            Ok(invites) if invites.is_empty() => {
+                println!("No invite codes. (`--generate-invite` creates one.)");
+                println!("  the legacy --invite code, if configured, is not stored here");
+                ExitCode::SUCCESS
+            }
+            Ok(invites) => {
+                let records = tenants::read_records(data_root).unwrap_or_default();
+                println!(
+                    "{} invite code(s) in {}",
+                    invites.len(),
+                    data_root.join(invites::INVITES_FILE).display()
+                );
+                for invite in invites {
+                    println!();
+                    println!("  code    : {}", invite.code);
+                    match invite.kind {
+                        invites::InviteKind::New => {
+                            println!("  admits  : a new account");
+                        }
+                        invites::InviteKind::Join => {
+                            let label = invite
+                                .tenant_id
+                                .as_deref()
+                                .and_then(|id| records.iter().find(|record| record.id == id))
+                                .map(|record| record.label.clone());
+                            println!(
+                                "  admits  : joins account {} ({})",
+                                label.unwrap_or_else(|| "MISSING".into()),
+                                invite.tenant_id.as_deref().unwrap_or("?")
+                            );
+                        }
+                    }
+                    match invite.remaining() {
+                        Some(0) => println!(
+                            "  uses    : {} of {} (used up)",
+                            invite.used,
+                            invite.max_uses.unwrap_or(0)
+                        ),
+                        Some(left) => println!(
+                            "  uses    : {} used, {} left of {}",
+                            invite.used,
+                            left,
+                            invite.max_uses.unwrap_or(0)
+                        ),
+                        None => println!("  uses    : {} used, unlimited", invite.used),
+                    }
+                    if invite.disabled {
+                        println!("  state   : revoked");
+                    }
+                    if let Some(note) = invite.note.as_deref() {
+                        println!("  note    : {note}");
+                    }
+                }
+                ExitCode::SUCCESS
+            }
+            Err(error) => {
+                report_error(
+                    data_root,
+                    "server:invites",
+                    format!("the invite store could not be read: {error}"),
+                );
+                ExitCode::from(1)
+            }
+        },
+        OperatorCommand::GenerateInvite { join, note, uses } => {
+            let max_uses = match uses.as_deref().map(str::trim).filter(|value| !value.is_empty()) {
+                None => Some(1),
+                Some("unlimited") => None,
+                Some(value) => match value.parse::<u32>() {
+                    Ok(count) if count > 0 => Some(count),
+                    _ => {
+                        eprintln!("--uses expects a positive number or `unlimited`");
+                        return ExitCode::from(2);
+                    }
+                },
+            };
+            let records = match tenants::read_records(data_root) {
+                Ok(records) => records,
+                Err(error) => {
+                    report_error(
+                        data_root,
+                        "server:invites",
+                        format!("the tenant registry could not be read: {error}"),
+                    );
+                    return ExitCode::from(1);
+                }
+            };
+            let (kind, tenant_id) = match join.as_deref().map(str::trim).filter(|value| !value.is_empty()) {
+                None => (invites::InviteKind::New, None),
+                Some(target) => {
+                    let Some(record) = records.iter().find(|record| {
+                        record.id == target || record.label.eq_ignore_ascii_case(target)
+                    }) else {
+                        eprintln!("no account matches `{target}`; run --list-tenants to see them");
+                        return ExitCode::from(2);
+                    };
+                    (invites::InviteKind::Join, Some(record.id.clone()))
+                }
+            };
+            let created = invites::create_invite(
+                data_root,
+                kind,
+                tenant_id.clone(),
+                note,
+                max_uses,
+                legacy_invite,
+            );
+            match created {
+                Ok(record) => {
+                    println!("Invite code created.");
+                    println!("  code    : {}", record.code);
+                    match record.kind {
+                        invites::InviteKind::New => {
+                            println!("  admits  : a new account (own data and sign-in)");
+                        }
+                        invites::InviteKind::Join => {
+                            let label = records
+                                .iter()
+                                .find(|tenant| Some(&tenant.id) == tenant_id.as_ref())
+                                .map(|tenant| tenant.label.clone())
+                                .unwrap_or_default();
+                            println!(
+                                "  admits  : joins the existing account \"{label}\" (same data and session)"
+                            );
+                            println!("  warning : whoever claims it gets this account's data;");
+                            println!("            hand it out only to people you trust");
+                        }
+                    }
+                    println!(
+                        "  uses    : {}",
+                        record
+                            .max_uses
+                            .map(|max| format!("{max}"))
+                            .unwrap_or_else(|| "unlimited".into())
+                    );
+                    if let Some(note) = record.note.as_deref() {
+                        println!("  note    : {note}");
+                    }
+                    println!("  stored  : {}", data_root.join(invites::INVITES_FILE).display());
+                    println!();
+                    println!("A client claims with POST /v1/tenants presenting this code;");
+                    println!("the running server reads the file on every claim — no restart needed.");
+                    ExitCode::SUCCESS
+                }
+                Err(error) => {
+                    report_error(
+                        data_root,
+                        "server:invites",
+                        format!("the invite code could not be created: {error}"),
+                    );
+                    ExitCode::from(1)
+                }
+            }
+        }
+        OperatorCommand::RevokeInvite(code) => {
+            if code.is_empty() {
+                eprintln!("--revoke-invite needs a code; run --list-invites to see them");
+                return ExitCode::from(2);
+            }
+            match invites::revoke_invite(data_root, &code) {
+                Ok(removed) => {
+                    println!("Revoked invite {}.", removed.code);
+                    println!("  a claim presenting it from now on is refused");
+                    ExitCode::SUCCESS
+                }
+                Err(error) => {
+                    report_error(
+                        data_root,
+                        "server:invites",
+                        format!("invite {code} could not be revoked: {error}"),
+                    );
+                    ExitCode::from(1)
+                }
+            }
+        }
     }
 }
 
@@ -305,6 +491,15 @@ fn announce(options: &ServerOptions, data_root: &Path, registry: &TenantRegistry
         "  registry       : {}",
         data_root.join(crate::tenants::REGISTRY_FILE).display()
     );
+    if let Ok(invites) = crate::invites::read_invites(data_root) {
+        if !invites.is_empty() {
+            println!(
+                "  invite codes   : {} in {}",
+                invites.len(),
+                data_root.join(crate::invites::INVITES_FILE).display()
+            );
+        }
+    }
     println!(
         "  tenants        : {} registered, {} loaded, {} running{}",
         health.registered,
@@ -325,7 +520,7 @@ fn announce(options: &ServerOptions, data_root: &Path, registry: &TenantRegistry
         } else if registry.is_unclaimed() {
             "NOT SET"
         } else {
-            "not set - new tenants are refused"
+            "not set - only per-code invites can admit (see --list-invites)"
         }
     );
 

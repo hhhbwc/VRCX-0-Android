@@ -129,6 +129,18 @@ pub struct ServerOptions {
     /// Remove a tenant from the registry and exit. Takes effect on the next
     /// start, because a running process still holds that tenant in memory.
     pub revoke_tenant: Option<String>,
+    /// Print invite codes and their use counts, then exit.
+    pub list_invites: bool,
+    /// Create an invite code, print it, then exit.
+    pub generate_invite: bool,
+    /// `--join` target (tenant id or exact label) for `--generate-invite`.
+    pub invite_join: Option<String>,
+    /// Free-form note stored on a generated code.
+    pub invite_note: Option<String>,
+    /// Claim limit for `--generate-invite`; "unlimited" or a positive number.
+    pub invite_uses: Option<String>,
+    /// Remove an invite code from the store, then exit.
+    pub revoke_invite: Option<String>,
 }
 
 impl ServerOptions {
@@ -153,6 +165,12 @@ impl ServerOptions {
             force_login: has_flag(args, "--login") || has_flag(args, "-l"),
             list_tenants: has_flag(args, "--list-tenants"),
             revoke_tenant: arg_value(args, "--revoke-tenant"),
+            list_invites: has_flag(args, "--list-invites"),
+            generate_invite: has_flag(args, "--generate-invite"),
+            invite_join: arg_value(args, "--join"),
+            invite_note: arg_value(args, "--note"),
+            invite_uses: arg_value(args, "--uses"),
+            revoke_invite: arg_value(args, "--revoke-invite"),
         }
     }
 
@@ -161,15 +179,44 @@ impl ServerOptions {
     /// These run before anything is built or bound, because the point of both is
     /// to work on a server that is already running elsewhere.
     pub fn operator_command(&self) -> Option<OperatorCommand> {
-        match (self.list_tenants, self.revoke_tenant.as_deref()) {
-            // One of these reads and the other destroys, so there is no safe
-            // precedence to pick: guessing wrong either hides a removal the
-            // operator asked for or performs one they did not.
-            (true, Some(_)) => Some(OperatorCommand::Ambiguous),
-            (true, None) => Some(OperatorCommand::ListTenants),
-            (false, Some(id)) => Some(OperatorCommand::RevokeTenant(id.trim().to_string())),
-            (false, None) => None,
+        // These commands print and exit; no two of them can run in one
+        // invocation. Picking a precedence would either hide an action the
+        // operator asked for or perform one they did not, so more than one
+        // is an error rather than a guess.
+        let selected = [
+            self.list_tenants,
+            self.revoke_tenant.is_some(),
+            self.list_invites,
+            self.generate_invite,
+            self.revoke_invite.is_some(),
+        ]
+        .iter()
+        .filter(|requested| **requested)
+        .count();
+        if selected > 1 {
+            return Some(OperatorCommand::Ambiguous);
         }
+
+        if self.list_tenants {
+            return Some(OperatorCommand::ListTenants);
+        }
+        if let Some(id) = self.revoke_tenant.as_deref() {
+            return Some(OperatorCommand::RevokeTenant(id.trim().to_string()));
+        }
+        if self.list_invites {
+            return Some(OperatorCommand::ListInvites);
+        }
+        if self.generate_invite {
+            return Some(OperatorCommand::GenerateInvite {
+                join: self.invite_join.clone(),
+                note: self.invite_note.clone(),
+                uses: self.invite_uses.clone(),
+            });
+        }
+        if let Some(code) = self.revoke_invite.as_deref() {
+            return Some(OperatorCommand::RevokeInvite(code.trim().to_string()));
+        }
+        None
     }
 }
 
@@ -177,6 +224,13 @@ impl ServerOptions {
 pub enum OperatorCommand {
     ListTenants,
     RevokeTenant(String),
+    ListInvites,
+    GenerateInvite {
+        join: Option<String>,
+        note: Option<String>,
+        uses: Option<String>,
+    },
+    RevokeInvite(String),
     Ambiguous,
 }
 
@@ -190,6 +244,10 @@ Usage:
 Operator commands (these print and exit):
   vrcx-0-remote-server --list-tenants [--data-dir <path>]
   vrcx-0-remote-server --revoke-tenant <tenantId> [--data-dir <path>]
+  vrcx-0-remote-server --generate-invite [--join <tenantId|label>]
+                       [--note <text>] [--uses <n|unlimited>] [--data-dir <path>]
+  vrcx-0-remote-server --list-invites [--data-dir <path>]
+  vrcx-0-remote-server --revoke-invite <code> [--data-dir <path>]
 
 Options:
   --config <path>    TOML configuration file (default: vrcx-server.toml next to
@@ -217,6 +275,20 @@ Options:
                      Remove a tenant from the registry and exit. Its data
                      directory is left on disk, and the server must be restarted
                      for the removal to take effect
+  --generate-invite  Create an invite code and print it. Without --join the
+                     code opens a new account when claimed; with --join it
+                     admits the claimant into an existing account instead
+                     (minting that device its own token into the same data)
+  --join <tenantId|label>
+                     Target account for --generate-invite (id from
+                     --list-tenants, or the exact label). Omit for a
+                     new-account code
+  --note <text>      Free-form note stored on a generated code
+  --uses <n|unlimited>
+                     Claim limit for --generate-invite (default 1)
+  --list-invites     Print invite codes, their kind and use counts, and exit
+  --revoke-invite <code>
+                     Delete an invite code and exit
   -h, --help         Show this message
 
 Tenants
@@ -233,6 +305,12 @@ Tenants
   The first tenant needs no invitation, so a fresh server can be brought up by
   one person. Set --invite before the server is reachable from the internet -
   otherwise anyone who can open the port can claim it.
+
+  Beyond the legacy --invite, codes can be issued one at a time with
+  --generate-invite: a code either opens a new account or joins an
+  existing one (--join), with a use count or unlimited. Codes live in
+  invites.json next to the registry and are read on every claim, so a
+  running server needs no restart when one is added.
 
 Signing in
   A running server with no usable session reports `status: degraded` from
@@ -345,6 +423,45 @@ mod tests {
             options.operator_command(),
             Some(OperatorCommand::Ambiguous)
         );
+    }
+
+    #[test]
+    fn invite_commands_and_their_payloads_parse() {
+        let options = ServerOptions::from_args(&args(&[
+            "--generate-invite",
+            "--join",
+            "default",
+            "--note",
+            "for the PC",
+            "--uses",
+            "3",
+        ]));
+        assert_eq!(
+            options.operator_command(),
+            Some(OperatorCommand::GenerateInvite {
+                join: Some("default".into()),
+                note: Some("for the PC".into()),
+                uses: Some("3".into()),
+            })
+        );
+
+        assert_eq!(
+            ServerOptions::from_args(&args(&["--list-invites"])).operator_command(),
+            Some(OperatorCommand::ListInvites)
+        );
+        assert_eq!(
+            ServerOptions::from_args(&args(&["--revoke-invite", "abc"])).operator_command(),
+            Some(OperatorCommand::RevokeInvite("abc".into()))
+        );
+    }
+
+    #[test]
+    fn two_operator_commands_are_still_refused() {
+        let options = ServerOptions::from_args(&args(&["--list-invites", "--list-tenants"]));
+        assert_eq!(options.operator_command(), Some(OperatorCommand::Ambiguous));
+        let options =
+            ServerOptions::from_args(&args(&["--generate-invite", "--revoke-tenant", "t"]));
+        assert_eq!(options.operator_command(), Some(OperatorCommand::Ambiguous));
     }
 }
 
