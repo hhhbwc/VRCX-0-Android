@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 与平板 demo 的页面底色一致，避免启动瞬间白闪 -->
+    <color name="app_surface">#FAF8FF</color>
+</resources>

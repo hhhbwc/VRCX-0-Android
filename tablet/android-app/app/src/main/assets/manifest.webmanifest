@@ -1,0 +1,20 @@
+{
+  "name": "VRCX-0",
+  "short_name": "VRCX-0",
+  "description": "VRCX-0 伴侣应用的布局规格（手机 / 平板 / 大屏同一套组件）。",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#faf8ff",
+  "theme_color": "#0054d6",
+  "categories": ["utilities", "social"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

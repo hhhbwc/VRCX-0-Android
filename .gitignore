@@ -33,3 +33,11 @@ _*.py
 _notes-*.md
 _build*
 *.out
+
+# Tablet
+tablet/android-app/build/
+tablet/android-app/.gradle/
+tablet/android-app/local.properties
+tablet/android-app/build.log
+tablet/android-app/tools/out/
+tablet/android-app/tools/__pycache__/

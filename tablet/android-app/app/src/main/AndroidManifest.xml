@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 数据面走 HTTPS。没有这个权限，桥一发请求就是 SecurityException。 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- usesCleartextTraffic 仅为局域网自建服务器（http://<内网IP>:8790）放行明文。
+         生产地址是 https + 指纹钉；明文下指纹不生效（isPinned() 会如实返回 false），
+         所以这只影响"自己在局域网里试"的场景，不改变对公网服务器的信任要求。
+         ⚠️ 注释不能写在起始标签的属性之间 —— XML 不允许，解析器会报
+         "元素类型 application 的内容必须由 > 或 /> 结束"。 -->
+    <application
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:theme="@style/Theme.Vrcx0Tablet"
+        android:hardwareAccelerated="true"
+        android:supportsRtl="true"
+        android:resizeableActivity="true"
+        android:usesCleartextTraffic="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:screenOrientation="unspecified"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density|uiMode|navigation"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

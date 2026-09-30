@@ -1,0 +1,46 @@
+/* ============================================================
+   brand.css — 第二套配色：App **代码里声明**的品牌色
+   —— Theme.kt::LightColors（teal + amber）
+
+   为什么需要它：Theme.kt 里 `dynamicColor: Boolean = true`，Android 12+ 走
+   dynamicLightColorScheme(context) —— **跟随用户壁纸**。所以真机截图
+   （docs/android-after.png）里主色是蓝 #0054d6，那不是 App 的品牌色，
+   是那台手机壁纸推出来的 Material You 色。
+
+   于是本 Demo 给两套，工具条上切：
+     · 默认（tokens.css）= 真机截图逐像素采样的**动态色** → 蓝色系
+     · html.brand（本文件）= Theme.kt 声明的**品牌色** → 青 + 琥珀
+
+   注意：Theme.kt 的 lightColorScheme(...) 只写了 primary/secondary/tertiary
+   三组，其余槽位（surface / outline 等）留空 → Compose Material3 1.3 的
+   baseline 值（#FEF7FF / #1D1B20 / #49454F …），下面照抄。
+   ============================================================ */
+
+html.brand {
+  --md-primary: #006a6c;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #9cf1f3;
+  --md-on-primary-container: #002021;
+
+  --md-secondary-container: #ffdcbe;      /* 品牌里那一抹琥珀 */
+  --md-on-secondary-container: #2c1600;
+
+  --md-surface: #fef7ff;
+  --md-surface-container-lowest: #ffffff;
+  --md-surface-container-low: #f7f2fa;
+  --md-surface-container: #f3edf7;
+  --md-surface-container-high: #ece6f0;
+  --md-surface-container-highest: #e6e0e9;
+
+  --md-on-surface: #1d1b20;
+  --md-on-surface-variant: #49454f;
+  --md-outline: #79747e;
+  --md-outline-variant: #cac4d0;
+
+  /* 禁用态令牌跟着本套的 onSurface 走（见 tokens.css 里同名的说明） */
+  --md-on-surface-a38: rgba(29, 27, 32, 0.38);
+  --md-on-surface-a12: rgba(29, 27, 32, 0.12);
+
+  --md-error: #b3261e;
+  --md-on-error: #ffffff;
+}

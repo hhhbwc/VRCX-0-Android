@@ -1,0 +1,294 @@
+/*
+ * 连接闸门 —— 平板 App 首次启动（或凭据失效）时的落地页。
+ *
+ * 形制照手机端 ui/screens/LoginScreen.kt：
+ *   标题(headlineSmall) + 副标题(bodySmall) → 地址输入 → 「服务器用了自签证书」
+ *   文字按钮 + 「连接」实心按钮 → 状态行 → 领取名额卡片 → 选账号 → 用户名密码。
+ * 令牌全部复用 tokens.css（与手机端 Theme.kt 同源），所以它天然和 App 一致。
+ *
+ * 为什么不塞进 app.css：app.css 是被布局断言与逐档出图盯住的那张表，
+ * 闸门与它无关（只在 App 内、未配置时出现）。单独一张表可以整张删掉而不影响
+ * 任何档位，也让"哪些规则属于布局规格"这条边界保持干净。
+ *
+ * ⚠️ **与手机端刻意不同的两处**（别当成 bug 改回去）：
+ *   1. 手机端是 LazyColumn + 「顶部 48dp 空档」，内容一律顶头排；
+ *      这里改成"够高居中、超高顶头可滚"（见 .gate 上的注释）。平板屏大，
+ *      顶头排会让整块内容挤在屏幕最上沿、下方空掉七成。
+ *   2. 手机端每个输入框都是 fillMaxWidth()（= 屏宽 - 24dp 外边距）；
+ *      这里给 .gate__pane 加了 470px 上限 —— 平板横屏下不让单个输入框横跨 1000px。
+ *   其余（字阶 / 形状 / 颜色令牌 / 步骤顺序 / 按钮形制）与手机端 1:1。
+ */
+
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  /*
+   * ⚠️⚠️ 这里**不能**用 align-items:center 来居中。
+   * 卡片比视口高时（手机竖屏必然如此），flex 居中会把卡片顶部推到可视区之上，
+   * 而且因为 overflow:auto 的滚动起点在内容顶部，**顶部永远滚不到** ——
+   * 实测真机上首屏的副标题就被切在半截，且无法上滚。正确做法是用
+   * flex-start + 子元素 margin:auto：够高时居中，超高时正常滚动。
+   */
+  align-items: flex-start;
+  justify-content: center;
+  overflow: auto;
+  /*
+   * 系统栏让位**只由原生容器做一次**（android-app/.../MainActivity.java 给它加的
+   * padding），这里不再叠 `env(safe-area-inset-*)`：两处都算就是双份内边距
+   * （WebView 上报的 env 值随版本变化，靠它兜底等于把结果交给运气）。
+   */
+  padding: var(--s4);
+  background: var(--md-surface);
+}
+
+/* hidden 属性要能压过上面的 display:flex */
+.gate[hidden] { display: none; }
+
+/*
+ * ⚠️ 闸门**内部**也要管：下面这些带 display 的类（.gate__actions / .gate__step …）
+ * 以及 app.css 的 `.btn{display:inline-flex}` 都会盖掉 `[hidden]` 的 UA `display:none`
+ * —— 于是本该藏起来的东西照样显示（上一版实测：首次打开就露出 2FA 输入框和
+ * 「先看看界面」按钮）。属性选择器 (0,2,0) 稳压单类 (0,1,0)，不必用 !important；
+ * 但**新加的任何带 display 的闸门类都要知道这条底线存在**。
+ */
+.gate [hidden] { display: none; }
+
+.gate__pane {
+  margin: auto;              /* 见 .gate 上的注释：这是"够高居中、超高可滚"的关键 */
+  width: 100%;
+  max-width: 470px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+/* ---------------------------------------------------------------- 头部 */
+
+.gate__head { display: flex; flex-direction: column; gap: 4px; }
+
+.gate__head h1 {
+  margin: 0;
+  font: var(--w-semi) var(--title-l) / var(--title-l-lh) var(--font);
+  letter-spacing: var(--title-l-ls);
+  color: var(--md-on-surface);
+}
+
+.gate__head p {
+  margin: 0;
+  font: var(--w-normal) var(--body-s) / var(--body-s-lh) var(--font);
+  color: var(--md-on-surface-variant);
+}
+
+/* ---------------------------------------------------------------- 表单 */
+
+.gate__field { display: flex; flex-direction: column; gap: 6px; }
+
+/* M3 label-medium，与 .detail__label 同一形制（但不染主色，见下） */
+.gate__label {
+  font: var(--w-medium) var(--label-m) / var(--label-m-lh) var(--font);
+  letter-spacing: var(--label-m-ls);
+  color: var(--md-on-surface-variant);
+}
+
+/*
+ * 输入框照 M3 OutlinedTextField：1px 描边 + 圆角。刻意不复用 .field
+ * （那是演示外壳里带图标的搜索框），闸门的表单要的是"输入"而不是"搜索"。
+ */
+.gate__input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 var(--s3);
+  box-sizing: border-box;
+  border: 1px solid var(--md-outline);
+  border-radius: var(--shape-s);
+  background: transparent;
+  color: var(--md-on-surface);
+  font: var(--w-normal) var(--body-l) / var(--body-l-lh) var(--font);
+}
+.gate__input::placeholder { color: var(--md-on-surface-variant); opacity: .7; }
+.gate__input:focus-visible {
+  outline: none;
+  border-color: var(--md-primary);
+  box-shadow: 0 0 0 1px var(--md-primary);
+}
+.gate__input.is-error { border-color: var(--md-error); }
+
+/* 辅助说明（supportingText）：比正文小、比错误弱 */
+.gate__support {
+  margin: 0;
+  font: var(--w-normal) var(--body-s) / var(--body-s-lh) var(--font);
+  color: var(--md-on-surface-variant);
+}
+.gate__support.is-error { color: var(--md-error); }
+.gate__support.is-ok { color: var(--md-primary); }
+
+/* ---------------------------------------------------------------- 动作区 */
+
+.gate__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.gate__actions--end { justify-content: flex-end; }
+.gate__spacer { flex: 1 1 auto; }
+
+/* M3 TextButton：主色文字、无底、44px 触摸目标 */
+.gate__link {
+  min-height: 44px;
+  padding: 0 var(--s3);
+  border: 0;
+  border-radius: var(--shape-full);
+  background: transparent;
+  color: var(--md-primary);
+  font: var(--w-medium) var(--label-l) / var(--label-l-lh) var(--font);
+  cursor: pointer;
+}
+.gate__link:hover {
+  /* 前置一条字面量兜底：color-mix 不支持时该声明被丢弃，仍有可见的悬停反馈 */
+  background: rgba(0, 84, 214, .08);
+  background: color-mix(in srgb, var(--md-primary) 12%, transparent);
+}
+.gate__link:focus-visible {
+  outline: 2px solid var(--md-primary);
+  outline-offset: 2px;
+}
+
+.gate .btn { min-height: 48px; }
+/* 手机上 Button 是「文字 + ArrowForward」，这里照做（间距 6px ≈ 手机端的 Spacer(6.dp)） */
+.gate .btn__arrow { flex: none; margin-left: 6px; }
+.gate__wide { width: 100%; }
+
+/* ---------------------------------------------------------------- 步骤块 */
+
+.gate__step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s4);
+  border-radius: var(--shape-m);
+  background: var(--md-surface-container);
+}
+
+.gate__step h2 {
+  margin: 0;
+  font: var(--w-semi) var(--title-s) / var(--title-s-lh) var(--font);
+  letter-spacing: var(--title-s-ls);
+  color: var(--md-on-surface);
+}
+
+/* 账号列表：一行一个可点条目，头像 + 名字 + 用户名 */
+.gate__accounts { display: flex; flex-direction: column; gap: var(--s2); }
+
+.gate__account {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 56px;
+  padding: 0 var(--s3);
+  border: 1px solid var(--md-outline-variant, var(--md-outline));
+  border-radius: var(--shape-s);
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  text-align: left;
+  cursor: pointer;
+}
+.gate__account:focus-visible {
+  outline: 2px solid var(--md-primary);
+  outline-offset: 2px;
+}
+
+.gate__account-av {
+  flex: none;
+  width: 40px; height: 40px;
+  border-radius: var(--shape-full);
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  display: flex; align-items: center; justify-content: center;
+  font: var(--w-medium) var(--body-l) / 1 var(--font);
+}
+
+.gate__account-txt { display: flex; flex-direction: column; min-width: 0; }
+.gate__account-name {
+  font: var(--w-medium) var(--body-l) / var(--body-l-lh) var(--font);
+  color: var(--md-on-surface);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gate__account-sub {
+  font: var(--w-normal) var(--body-s) / var(--body-s-lh) var(--font);
+  color: var(--md-on-surface-variant);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.gate__fields { display: flex; flex-direction: column; gap: var(--s3); }
+
+/* ---------------------------------------------------------------- 状态 / 页脚 */
+
+.gate__status {
+  margin: 0;
+  min-height: 1.4em;
+  font: var(--w-normal) var(--body-s) / var(--body-s-lh) var(--font);
+  color: var(--md-on-surface-variant);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+/* 失败用错误色，成功用主色 —— 与 App 的状态色语义一致 */
+.gate__status.is-error { color: var(--md-error); }
+.gate__status.is-ok { color: var(--md-primary); }
+
+.gate__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  padding-top: var(--s2);
+}
+
+/* ---------------------------------------------------------------- 二步验证模态 */
+
+.gate__modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s4);
+  background: var(--md-scrim);
+}
+
+/*
+ * ⚠️ 闸门**外面**也有一处用了 .gate__modal（个人页的二次确认 #confirm）。
+ * 它不在 `.gate` 里，所以上面那条 `.gate [hidden]` 罩不住它 ——
+ * 而这里的 `display:flex` 会盖掉 `[hidden]` 的 UA `display:none`，
+ * 于是确认框会在每次打开 App 时就以"空对话框"的样子露在屏幕上。
+ * 属性选择器 (0,2,0) 稳压单类 (0,1,0)，不必用 !important。
+ */
+#confirm[hidden] { display: none; }
+
+.gate__dialog {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s4);
+  border-radius: var(--shape-l);
+  background: var(--md-surface-container-high, var(--md-surface));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .24);
+}
+.gate__dialog h2 {
+  margin: 0;
+  font: var(--w-semi) var(--title-s) / var(--title-s-lh) var(--font);
+  letter-spacing: var(--title-s-ls);
+  color: var(--md-on-surface);
+}
+
+/* 尊重系统"减少动态效果" */
+@media (prefers-reduced-motion: reduce) {
+  .gate *, .gate *::before, .gate *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}

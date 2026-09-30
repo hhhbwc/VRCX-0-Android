@@ -16,6 +16,7 @@
 |---|---|---|---|
 | **服务端**（headless） | 持有 VRChat 会话、落 SQLite、记录事件流；**没有界面** | 一台 VPS / NAS / 路由器 / Android（Termux），常年在线 | `crates/remote-server/` |
 | **客户端**（瘦） | 只负责看与操作，**不持有任何 VRChat 凭据**，所有数据来自你自己部署的服务端 | 手机（将来的 PC 客户端连同一个服务端） | `android/` |
+| **平板客户端**（独立 App） | 同一个服务端的另一副面孔：WebView 壳 + 本地网页，界面更像"驾驶舱" | Android 平板 | `tablet/` |
 
 一句话：**"记录"从「我的电脑开着吗」变成了「服务器在跑吗」。**
 
@@ -26,6 +27,7 @@
 |---|---|
 | `docs/` | 这两条线的设计文档与安全模型 |
 | `tools/` | 交叉编译、代码生成、端到端测试脚本 |
+| `tablet/` | 平板客户端（WebView 壳 + 本地网页，见 `tablet/README.md`） |
 
 > 服务端放在这里只是因为**这个客户端现在只有它需要**；它是平台无关的，将来的 PC 客户端
 > 会连同一个服务端（那是另一个项目）。
@@ -136,6 +138,12 @@ SPKI pin）→ `firewall.sh`（ufw 只放行 22/80/443）→ `verify.sh` 自检 
 
 客户端只存**服务器地址与 token**，不存任何 VRChat 凭据（`ServerConfigStore`，DataStore）。
 连接自签证书的服务器时填 SPKI pin —— 与 SSH 首次信任 host key 是同一个模型。
+
+## 平板客户端
+
+见 [`tablet/README.md`](tablet/README.md)。与手机端共用同一个服务端与 token，
+但 UI 是另一套：本地网页（M3 设计 token，深色主题、宽屏布局）跑在原生 WebView 壳里，
+桥协议只透传 `{command, args}`。
 
 ## License
 

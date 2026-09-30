@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<!-- ⚠️ user-scalable=no / maximum-scale=1 是**真正**关掉双指捏合的那一刀。
+     WebSettings.setSupportZoom(false) 只关掉内置缩放按钮，拦不住手势 ——
+     真机上在哪里都能双指放大，就是因为它缺了这两个。 -->
+<title>VRCX-0 · 布局规格（手机 / 平板 / 大屏同一套 UI）</title>
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/stage.css">
+<link rel="stylesheet" href="styles/app.css">
+<link rel="stylesheet" href="styles/brand.css">
+<link rel="stylesheet" href="styles/gate.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#0054d6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="VRCX-0">
+<!-- 桥接放在 head：原生可能在本文件解析完之前就回一次结果，
+     而回调入口 window.__vrcxResolve 必须已经存在（见 scripts/bridge.js）。
+     两个文件都不碰 DOM，放在 head 没有时序风险。 -->
+<script src="scripts/argforms.js"></script>
+<script src="scripts/bridge.js"></script>
+</head>
+<body>
+
+<!-- 图标 sprite：Material Symbols Outlined 风格的线性图标，与 App 的 material-icons-outlined 对应 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-feed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 6h2M4 12h2M4 18h2M10 6h10M10 12h10M10 18h10"/>
+  </symbol>
+  <symbol id="i-friends" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.1 2.7-5.4 6-5.4s6 2.3 6 5.4"/>
+    <circle cx="17" cy="9" r="2.4"/><path d="M16 14.4c2.9.2 5 2 5 4.6"/>
+  </symbol>
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 11.4 12 4l8 7.4"/><path d="M6.2 10.6V20h11.6v-9.4"/><path d="M10 20v-5h4v5"/>
+  </symbol>
+  <symbol id="i-fav" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.5" y="6.5" width="14" height="11.5" rx="2"/>
+    <path d="M7 3.5h11.5a2 2 0 0 1 2 2V17"/>
+    <path d="m6.5 14.5 3.4-3.4 2.6 2.6 1.8-1.8 3.2 3.2"/>
+  </symbol>
+  <symbol id="i-me" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.7 3.1-6.2 7-6.2s7 2.5 7 6.2"/>
+  </symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 4.2A5.4 5.4 0 0 1 17.4 9.6v3.3l1.5 3.1H5.1l1.5-3.1V9.6A5.4 5.4 0 0 1 12 4.2Z"/>
+    <path d="M10 18.8a2 2 0 0 0 4 0"/>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="6.2"/>
+    <path d="m15.6 15.6 4.4 4.4"/>
+  </symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="4" y="4" width="7" height="7" rx="1.5"/>
+    <rect x="13" y="4" width="7" height="7" rx="1.5"/>
+    <rect x="4" y="13" width="7" height="7" rx="1.5"/>
+    <rect x="13" y="13" width="7" height="7" rx="1.5"/>
+  </symbol>
+  <symbol id="i-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4.5 5.5v4h4"/>
+    <path d="M4.9 9.3A7.6 7.6 0 1 1 4.4 13"/>
+    <path d="M12 8.6V12l2.6 1.8"/>
+  </symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2.8 12S6 5.8 12 5.8 21.2 12 21.2 12 18 18.2 12 18.2 2.8 12 2.8 12Z"/>
+    <circle cx="12" cy="12" r="2.6"/>
+  </symbol>
+  <symbol id="i-group" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="8.4" cy="8.6" r="3"/>
+    <path d="M2.8 19.2c0-3 2.5-5.2 5.6-5.2s5.6 2.2 5.6 5.2"/>
+    <circle cx="16.6" cy="9.6" r="2.4"/>
+    <path d="M15.7 14.2c2.9.1 5.5 2 5.5 4.6"/>
+  </symbol>
+  <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5"/>
+  </symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m10 7 5 5-5 5"/>
+  </symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="5" y="10.5" width="14" height="9.5" rx="2"/>
+    <path d="M8.4 10.5V8a3.6 3.6 0 0 1 7.2 0v2.5"/>
+  </symbol>
+  <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="8.5" cy="12" r="3.5"/><path d="M12 12h8M17 12v3M20 12v2"/>
+  </symbol>
+  <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10.5 13.5a3.5 3.5 0 0 0 5 0l3-3a3.6 3.6 0 0 0-5-5l-1.2 1.2"/>
+    <path d="M13.5 10.5a3.5 3.5 0 0 0-5 0l-3 3a3.6 3.6 0 0 0 5 5l1.2-1.2"/>
+  </symbol>
+</svg>
+
+<div class="stage">
+
+  <header class="stage__bar">
+    <div class="stage__brand">
+      <b>VRCX-0</b>
+      <span>一套 UI · 四档自适应 · 组件与手机端完全一致</span>
+    </div>
+
+    <div class="stage__group" role="group" aria-label="视口">
+      <button class="vbtn is-on" data-vp="phone">手机 393×852</button>
+      <button class="vbtn" data-vp="tabp">平板竖 834×1112</button>
+      <button class="vbtn" data-vp="tabl">平板横 1112×834</button>
+      <button class="vbtn" data-vp="desk">大屏 1440×900</button>
+    </div>
+
+    <div class="stage__group">
+      <label class="tog"><input type="checkbox" id="brand"><span>声明色对比（青·琥珀）</span></label>
+      <label class="tog"><input type="checkbox" id="hot"><span>触控热区</span></label>
+      <label class="tog"><input type="checkbox" id="grid"><span>栅格</span></label>
+    </div>
+  </header>
+
+  <div class="stage__board">
+
+    <div class="canvas" id="canvas">
+      <!-- .fit = 被演示设备的实际尺寸盒（main.js 按档位写死宽高，非出图模式下再整体缩放居中）
+           容器查询长在里面的 .screen 上，所以 .screen 必须严格等于档位尺寸 -->
+      <div class="fit">
+      <div class="screen" id="screen">
+        <div class="app" id="app">
+
+          <!-- ============ 顶栏 VrcxTopBar ============ -->
+          <header class="topbar app__topbar">
+            <span class="conn" role="img" aria-label="已连接"></span>
+            <button class="mebtn" data-goto="profile" aria-label="我">
+              <span class="avatar av3" id="topAvatar">·</span>
+            </button>
+            <span class="spacer"></span>
+            <!-- 「更多」入口（窄屏）：底栏 6 项排不开，所以窄屏从这里进，
+                 宽屏走侧边导轨（.toolbtn 由容器查询控制显隐）。 -->
+            <button class="iconbtn toolbtn" id="toolbtn" data-goto="tools" aria-label="更多">
+              <svg width="24" height="24" aria-hidden="true"><use href="#i-grid"/></svg>
+            </button>
+            <button class="iconbtn" id="searchBtn" aria-label="全局搜索">
+              <svg width="24" height="24" aria-hidden="true"><use href="#i-search"/></svg>
+            </button>
+            <button class="iconbtn" id="notificationsBtn" aria-label="通知">
+              <svg width="24" height="24" aria-hidden="true"><use href="#i-bell"/></svg>
+              <span class="badge" id="notifBadge" hidden></span>
+            </button>
+            <div class="topbar__status">
+              <!-- 地址由 conn.js 的 paintTopbar() 按配置写进来；这里**不许**摆一个看起来像
+                   真实服务器的样例地址（原先写死的是某个内网 IP，未登录时顶栏就是在
+                   宣称自己连着那台机器）。 -->
+              <span class="topbar__addr">未配置</span>
+              <span class="topbar__online">未连接</span>
+            </div>
+          </header>
+
+          <!-- ============ 侧边导轨（平板起） ============ -->
+          <nav class="nav app__rail" aria-label="主导航">
+            <button class="navitem is-on" data-goto="feed">
+              <span class="navitem__ind"><svg aria-hidden="true"><use href="#i-feed"/></svg></span>
+              <span class="navitem__label">动态</span>
+            </button>
+            <button class="navitem" data-goto="friends">
+              <span class="navitem__ind"><svg aria-hidden="true"><use href="#i-friends"/></svg></span>
+              <span class="navitem__label">好友</span>
+            </button>
+            <button class="navitem" data-goto="home">
+              <span class="navitem__ind"><svg aria-hidden="true"><use href="#i-home"/></svg></span>
+              <span class="navitem__label">主页</span>
+            </button>
+            <button class="navitem" data-goto="favorites">
+              <span class="navitem__ind"><svg aria-hidden="true"><use href="#i-fav"/></svg></span>
+              <span class="navitem__label">收藏</span>
+            </button>
+            <button class="navitem" data-goto="profile">
+              <span class="navitem__ind"><svg aria-hidden="true"><use href="#i-me"/></svg></span>
+              <span class="navitem__label">个人</span>
+            </button>
+            <button class="navitem" data-goto="tools">
+              <span class="navitem__ind"><svg aria-hidden="true"><use href="#i-grid"/></svg></span>
+              <span class="navitem__label">更多</span>
+            </button>
+
+            <div class="rail__brand" aria-hidden="true"><b>VRCX-0</b><span>瘦客户端 · v0.1</span></div>
+          </nav>
+
+          <!-- ============ 内容区 ============ -->
+          <main class="app__content">
+            <div class="pane pane--main">
+
+              <!-- 状态横幅：由 conn.js（未登录提示/凭据失效）与 screens.js
+                   （加载中/取数失败/成功隐藏）接管。这里的只是 JS 跑起来
+                   之前的一瞬间的占位，不写任何"演示数据"字样。 -->
+              <div class="demobar" id="demobar" role="note" hidden>
+                <span class="demobar__dot" aria-hidden="true"></span>
+                <span id="demobar-text">正在从服务器读取…</span>
+              </div>
+
+              <!-- ---------- Tab 1 动态 FeedScreen ---------- -->
+              <section class="page" data-screen="feed">
+                <div class="controls">
+                  <div class="field">
+                    <input type="text" id="feedSearch" placeholder="搜索动态（好友名 / 世界名）" aria-label="搜索动态">
+                  </div>
+                  <div class="chipstrip" role="group" aria-label="分区">
+                    <button class="chip is-on">动态</button>
+                    <!-- 日志 = 游戏日志页（data-goto 由 main.js 接线）。更多页里
+                         不再放重复的「游戏日志」卡 —— 入口只有这一个。 -->
+                    <button class="chip" data-goto="gamelog" data-tool="gamelog">日志</button>
+                  </div>
+                  <div class="chipstrip" role="group" aria-label="筛选">
+                    <button class="chip is-on" data-feed-kind="">全部</button>
+                    <button class="chip" data-feed-kind="GPS">位置</button>
+                    <button class="chip" data-feed-kind="Status">状态</button>
+                    <button class="chip" data-feed-kind="Bio">简介</button>
+                    <button class="chip" data-feed-kind="Avatar">模型</button>
+                    <button class="chip" data-feed-kind="Online">上线</button>
+                    <button class="chip" data-feed-kind="Offline">下线</button>
+                  </div>
+                </div>
+
+                <!-- ⚠️ 这个容器在 App 内、已登录时会被 scripts/screens.js 用**真实动态**整体换掉。
+                     下面这批是浏览器 / 出图 / 四档布局断言要用的样例，保留不动。 -->
+                <p class="emptynote" id="feedEmpty" hidden></p>
+                <div class="stack" id="feedList">
+                  <button class="card" data-open-detail>
+                    <div class="feedrow">
+                      <span class="avatar avatar--40 av1">A</span>
+                      <div class="feedrow__body">
+                        <div class="rowline"><span class="name">示例好友 A</span><span class="kind">下线</span></div>
+                        <div class="body">在私密房间</div>
+                        <div class="time">09-19 07:51</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button class="card" data-open-detail>
+                    <div class="feedrow">
+                      <span class="avatar avatar--40 av2">B</span>
+                      <div class="feedrow__body">
+                        <div class="rowline"><span class="name">示例好友 B</span><span class="kind">下线</span></div>
+                        <div class="body">在 Just H Party 3.0 · 好友可见</div>
+                        <div class="time">09-19 07:45</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button class="card" data-open-detail>
+                    <div class="feedrow">
+                      <span class="avatar avatar--40 av3">C</span>
+                      <div class="feedrow__body">
+                        <div class="rowline"><span class="name">示例好友 C</span><span class="kind">下线</span></div>
+                        <div class="body">在 Just H Party 3.0 · 好友可见</div>
+                        <div class="time">09-19 07:42</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button class="card" data-open-detail>
+                    <div class="feedrow">
+                      <span class="avatar avatar--40 av4">D</span>
+                      <div class="feedrow__body">
+                        <div class="rowline"><span class="name">示例好友 D</span><span class="kind">状态</span></div>
+                        <div class="body">去上班了，远程可游玩</div>
+                        <div class="time">09-19 07:35</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button class="card" data-open-detail>
+                    <div class="feedrow">
+                      <span class="avatar avatar--40 av5">E</span>
+                      <div class="feedrow__body">
+                        <div class="rowline"><span class="name">示例好友 E</span><span class="kind">模型</span></div>
+                        <div class="body">换了模型：Kemono 02</div>
+                        <div class="time">昨天 23:41</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button class="card" data-open-detail>
+                    <div class="feedrow">
+                      <span class="avatar avatar--40 av6">A</span>
+                      <div class="feedrow__body">
+                        <div class="rowline"><span class="name">示例好友 A</span><span class="kind">位置</span></div>
+                        <div class="body">在 Just H Party 3.0 · 好友可见</div>
+                        <div class="time">昨天 22:07</div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </section>
+
+              <!-- ---------- Tab 2 好友 FriendsScreen ---------- -->
+              <section class="page" data-screen="friends" hidden>
+                <div class="controls">
+                  <div class="fieldrow">
+                    <div class="field" style="flex:1">
+                      <input type="text" id="friendSearch" placeholder="搜索好友" aria-label="搜索好友">
+                    </div>
+                    <button class="btn btn--filled" id="graphBtn" data-goto="graph" data-tool="graph">关系图</button>
+                  </div>
+                  <div class="chipstrip" role="group" aria-label="分组">
+                    <button class="chip is-on" data-f-filter="">全部</button>
+                    <button class="chip" data-f-filter="same">同房间</button>
+                    <button class="chip" data-f-filter="online">在线</button>
+                    <button class="chip" data-f-filter="active">活跃</button>
+                    <button class="chip" data-f-filter="offline">离线</button>
+                  </div>
+                </div>
+
+                <!-- 同上：App 内已登录时由 screens.js 换成真实名单（按**所在世界**分组）。 -->
+                <p class="emptynote" id="friendEmpty" hidden></p>
+                <div class="stack" id="friendList">
+                  <div class="roomhead">Just H Party 3.0 · 好友可见 · 3 人</div>
+
+                  <button class="card" data-open-detail>
+                    <div class="friendrow">
+                      <span class="dotwrap"><span class="avatar avatar--40 av1">A</span><span class="dot dot--online"></span></span>
+                      <div class="feedrow__body">
+                        <div class="name">示例好友 A</div>
+                        <div class="body" style="margin-top:0">在 Just H Party 3.0 · 好友可见</div>
+                      </div>
+                      <span class="plat">PC</span>
+                    </div>
+                  </button>
+
+                  <button class="card" data-open-detail>
+                    <div class="friendrow">
+                      <span class="dotwrap"><span class="avatar avatar--40 av4">D</span><span class="dot dot--active"></span></span>
+                      <div class="feedrow__body">
+                        <div class="name">示例好友 D</div>
+                        <div class="body" style="margin-top:0">在 Just H Party 3.0 · 好友可见</div>
+                      </div>
+                      <span class="plat">Web</span>
+                    </div>
+                  </button>
+
+                  <button class="card" data-open-detail>
+                    <div class="friendrow">
+                      <span class="dotwrap"><span class="avatar avatar--40 av2">B</span><span class="dot dot--online"></span></span>
+                      <div class="feedrow__body">
+                        <div class="name">示例好友 B</div>
+                        <div class="body" style="margin-top:0">在 Just H Party 3.0 · 好友可见</div>
+                      </div>
+                      <span class="plat">Android</span>
+                    </div>
+                  </button>
+
+                  <div class="roomhead">私密房间 · 2 人</div>
+
+                  <button class="card" data-open-detail>
+                    <div class="friendrow">
+                      <span class="dotwrap"><span class="avatar avatar--40 av3">C</span><span class="dot dot--online"></span></span>
+                      <div class="feedrow__body">
+                        <div class="name">示例好友 C</div>
+                        <div class="body" style="margin-top:0">在私密房间</div>
+                      </div>
+                      <span class="plat">PC</span>
+                    </div>
+                  </button>
+
+                  <button class="card" data-open-detail>
+                    <div class="friendrow">
+                      <span class="dotwrap"><span class="avatar avatar--40 av5">E</span><span class="dot dot--online"></span></span>
+                      <div class="feedrow__body">
+                        <div class="name">示例好友 E</div>
+                        <div class="body" style="margin-top:0">在私密房间</div>
+                      </div>
+                      <span class="plat">PC</span>
+                    </div>
+                  </button>
+
+                  <div class="roomhead">离线 · 3 人</div>
+
+                  <button class="card" data-open-detail>
+                    <div class="friendrow">
+                      <span class="dotwrap"><span class="avatar avatar--40 av6">F</span><span class="dot"></span></span>
+                      <div class="feedrow__body">
+                        <div class="name">示例好友 F</div>
+                        <div class="body" style="margin-top:0">今日在线 3 小时 12 分</div>
+                      </div>
+                      <span class="plat">PC</span>
+                    </div>
+                  </button>
+
+                  <button class="card" data-open-detail>
+                    <div class="friendrow">
+                      <span class="dotwrap"><span class="avatar avatar--40 av1">G</span><span class="dot"></span></span>
+                      <div class="feedrow__body">
+                        <div class="name">示例好友 G</div>
+                        <div class="body" style="margin-top:0">2 小时前离线</div>
+                      </div>
+                      <span class="plat">iOS</span>
+                    </div>
+                  </button>
+                </div>
+              </section>
+
+              <!-- ---------- Tab 3 主页 HomeScreen ---------- -->
+              <section class="page" data-screen="home" hidden>
+                <div class="page__stack">
+
+                  <div class="sectionhead"><h2>最新动态</h2></div>
+                  <div class="stack" id="homeLatest">
+                    <button class="card card--low" data-goto="feed" style="padding:10px 14px">
+                      <div class="rowline"><span class="name">示例好友 A</span><span class="kind">下线</span></div>
+                      <div class="body">在私密房间</div>
+                    </button>
+                    <button class="card card--low" data-goto="feed" style="padding:10px 14px">
+                      <div class="rowline"><span class="name">示例好友 B</span><span class="kind">下线</span></div>
+                      <div class="body">在 Just H Party 3.0 · 好友可见</div>
+                    </button>
+                  </div>
+
+                  <div class="sectionhead"><h2>好友聚集地</h2><span id="homePlacesCount">3 个房间</span></div>
+                  <div class="strip" id="homePlaces">
+                    <button class="card card--low worldcard">
+                      <span class="worldcard__thumb">Just H<br>Party</span>
+                      <span class="worldcard__body">
+                        <span class="worldcard__name">Just H Party 3.0</span>
+                        <span class="worldcard__meta">3 位好友 · 好友可见</span>
+                      </span>
+                      <span class="avstack">
+                        <span class="avatar av1">A</span>
+                        <span class="avatar av4">D</span>
+                        <span class="avatar av2">B</span>
+                      </span>
+                    </button>
+                    <button class="card card--low worldcard">
+                      <span class="worldcard__thumb">私密</span>
+                      <span class="worldcard__body">
+                        <span class="worldcard__name">私密房间</span>
+                        <span class="worldcard__meta">2 位好友 · 私密</span>
+                      </span>
+                      <span class="avstack">
+                        <span class="avatar av3">C</span>
+                        <span class="avatar av5">E</span>
+                      </span>
+                    </button>
+                    <button class="card card--low worldcard">
+                      <span class="worldcard__thumb">Lofi<br>Café</span>
+                      <span class="worldcard__body">
+                        <span class="worldcard__name">Lofi Café</span>
+                        <span class="worldcard__meta">1 位好友 · 公开</span>
+                      </span>
+                      <span class="avstack"><span class="avatar av6">F</span></span>
+                    </button>
+                  </div>
+                  <button class="more" id="homePlacesMore">查看全部</button>
+
+                  <!-- 「猜你想去」整块删掉了：服务端没有任何"推荐世界"的接口。
+                       留一块永远编出来的样例，比缺一块更糟 —— 用户分不出哪条是真的。
+                       「最近浏览」是真数据（服务端浏览历史），它留下了。 -->
+
+                  <div class="sectionhead"><h2>最近浏览</h2></div>
+                  <div class="strip" id="homeRecent">
+                    <button class="card card--low worldcard" style="width:220px">
+                      <span class="worldcard__thumb">Just H<br>Party</span>
+                      <span class="worldcard__body">
+                        <span class="worldcard__name">Just H Party 3.0</span>
+                        <span class="worldcard__meta">浏览 12 次</span>
+                      </span>
+                    </button>
+                    <button class="card card--low worldcard" style="width:220px">
+                      <span class="worldcard__thumb">Midnight<br>Rooftop</span>
+                      <span class="worldcard__body">
+                        <span class="worldcard__name">Midnight Rooftop</span>
+                        <span class="worldcard__meta">浏览 5 次</span>
+                      </span>
+                    </button>
+                  </div>
+
+                  <div class="sectionhead"><h2>数据统计</h2></div>
+                  <div class="statgrid" id="homeStats">
+                    <div class="card card--low stat card--static"><b>1842</b><span>动态总数</span></div>
+                    <div class="card card--low stat card--static"><b>612</b><span>好友上线</span></div>
+                    <div class="card card--low stat card--static"><b>598</b><span>好友下线</span></div>
+                    <div class="card card--low stat card--static"><b>470</b><span>位置变化</span></div>
+                    <div class="card card--low stat card--static"><b>96</b><span>换了模型</span></div>
+                    <div class="card card--low stat card--static"><b>66</b><span>状态变化</span></div>
+                    <div class="card card--low stat card--static"><b>18</b><span>添加好友</span></div>
+                    <div class="card card--low stat card--static"><b>3</b><span>删除好友</span></div>
+                    <div class="card card--low stat card--static"><b>41</b><span>浏览过的世界</span></div>
+                    <div class="card card--low stat card--static"><b>263</b><span>累计浏览次数</span></div>
+                    <div class="card card--low stat card--static"><b>58</b><span>在线峰值</span></div>
+                    <div class="card card--low stat card--static"><b>12</b><span>新增世界</span></div>
+                  </div>
+
+                </div>
+              </section>
+
+              <!-- ---------- Tab 4 收藏 FavoritesScreen ---------- -->
+              <section class="page" data-screen="favorites" hidden>
+                <div class="controls">
+                  <!-- 三颗按钮在 App 内是可用的（screens.js 按 data-fav-kind 切档重渲染）；
+                       浏览器模式下点了没反应，因为那一侧根本没有数据面。 -->
+                  <div class="chipstrip" role="group" aria-label="收藏类型" id="favChips">
+                    <button class="chip is-on" data-fav-kind="world">世界</button>
+                    <button class="chip" data-fav-kind="avatar">模型</button>
+                    <button class="chip" data-fav-kind="friend">好友</button>
+                    <!-- 群组档 = saved_group_favorites 的本地收藏夹集合（不是 VRChat 原生群组收藏） -->
+                    <button class="chip" data-fav-kind="group">群组</button>
+                  </div>
+                  <!-- 新建收藏夹（0.2.31-t4）：按当前档的类型建；「群组」档不适用。 -->
+                  <button class="btn" id="favNewGroup" style="margin-left:12px">新建收藏夹</button>
+                </div>
+
+                <p class="emptynote" id="favEmpty" hidden></p>
+                <div id="favBody">
+                <div class="grouphead"><span>日常闲逛</span><span>6</span></div>
+                <div class="favgrid">
+                  <button class="card card--low favcell">
+                    <span class="worldcard__thumb">Just H<br>Party</span>
+                    <span class="worldcard__name">Just H Party 3.0</span>
+                  </button>
+                  <button class="card card--low favcell">
+                    <span class="worldcard__thumb">Lofi<br>Café</span>
+                    <span class="worldcard__name">Lofi Café</span>
+                  </button>
+                  <button class="card card--low favcell">
+                    <span class="worldcard__thumb">Neon<br>Alley</span>
+                    <span class="worldcard__name">Neon Alley</span>
+                  </button>
+                  <button class="card card--low favcell">
+                    <span class="worldcard__thumb">Sunset<br>Pier</span>
+                    <span class="worldcard__name">Sunset Pier</span>
+                  </button>
+                  <button class="card card--low favcell">
+                    <span class="worldcard__thumb">Aurora<br>Hall</span>
+                    <span class="worldcard__name">Aurora Hall</span>
+                  </button>
+                  <button class="card card--low favcell">
+                    <span class="worldcard__thumb">Crystal<br>Cave</span>
+                    <span class="worldcard__name">Crystal Cave</span>
+                  </button>
+                </div>
+
+                <div class="grouphead"><span>摄影用</span><span>3</span></div>
+                <div class="favgrid">
+                  <button class="card card--low favcell">
+                    <span class="worldcard__thumb">Midnight<br>Rooftop</span>
+                    <span class="worldcard__name">Midnight Rooftop</span>
+                  </button>
+                  <button class="card card--low favcell">
+                    <span class="worldcard__thumb">Snow<br>Field</span>
+                    <span class="worldcard__name">Snow Field</span>
+                  </button>
+                  <button class="card card--low favcell">
+                    <span class="worldcard__thumb">Garden<br>Tea</span>
+                    <span class="worldcard__name">Garden Tea</span>
+                  </button>
+                </div>
+
+                <div class="grouphead"><span>常去的世界</span><span>3</span></div>
+                <div class="favgrid">
+                  <button class="card card--low favcell">
+                    <span class="worldcard__thumb">Skyline<br>Lounge</span>
+                    <span class="worldcard__name">Skyline Lounge</span>
+                  </button>
+                  <button class="card card--low favcell">
+                    <span class="worldcard__thumb">Pixel<br>Arcade</span>
+                    <span class="worldcard__name">Pixel Arcade</span>
+                  </button>
+                  <button class="card card--low favcell">
+                    <span class="worldcard__thumb">Lunar<br>Dock</span>
+                    <span class="worldcard__name">Lunar Dock</span>
+                  </button>
+                </div>
+                </div><!-- /#favBody -->
+              </section>
+
+              <!-- ---------- Tab 5 个人 ProfileScreen ---------- -->
+              <section class="page" data-screen="profile" hidden>
+                <div class="page__stack">
+
+                  <!-- 头像 / 昵称 / 账号句柄**只能来自当前登录账号**，样例数据里
+                       绝不写死任何名字 —— 写死了就会有人误以为"我的账号怎么是别人"。
+                       未登录时这里只有一句实话；登录后由 conn.js 的 paintMe()
+                       用 /v1/auth/status 的真实 displayName + /v1/auth/accounts 的
+                       username 填进来。 -->
+                  <div class="card card--low card--static me is-anon" id="meCard">
+                    <div class="me__head">
+                      <span class="avatar avatar--56 av3" id="meAvatar" aria-hidden="true">·</span>
+                      <div style="min-width:0">
+                        <div class="name name--l" id="meName">未登录</div>
+                        <div class="me__user" id="meUser" hidden></div>
+                        <div class="me__status" id="meStatus">这台设备还没有登录服务器</div>
+                      </div>
+                    </div>
+
+                    <!-- ⚠️ 这几行是**账号数据**，整块可隐藏：样例里的值（模型名 / 世界名 /
+                         人称代词 / 状态文字 / 信任等级）都属于某个具体账号 —— 未登录时
+                         照着显示，就等于替一个不存在的"我"编了份资料（此前就是这样）。
+                         未登录 → 整块藏起来（paintMe 里同步），登录后由 screens.js 填真值。 -->
+                    <div id="meKv">
+                    <!-- ⚠️ 带 chevron 的行**必须真能点**。以前「当前模型 / 人称代词 /
+                         状态文字」三行都挂着一枚 chevron（= 明确的可点 + 二级菜单暗示）
+                         却没有任何监听器，点了毫无反应 —— 假的可点暗示比不可点更糟。
+                         现在：当前模型 = 进「我的模型」页；人称代词 / 状态文字 = 就地编辑
+                         （走 app__vrchat_current_user_update，服务端 279 条里确认有）。
+                         没做成可点的行一律**不给** chevron。 -->
+                    <button class="kv kv--act" id="kvAvatarRow" type="button"
+                            data-goto="myavatars" data-tool="myavatars">
+                      <span class="kv__k">当前模型</span>
+                      <span class="kv__v kv__v--link" id="kvAvatar">Kemono 02</span>
+                      <svg class="chev" aria-hidden="true"><use href="#i-chev"/></svg>
+                    </button>
+                    <div class="kv">
+                      <span class="kv__k">主页世界</span>
+                      <span class="kv__v" id="kvHomeWorld">Just H Party 3.0</span>
+                    </div>
+                    <button class="kv kv--act" id="kvPronounsRow" type="button">
+                      <span class="kv__k">人称代词</span>
+                      <span class="kv__v" id="kvPronouns">他/他</span>
+                      <svg class="chev" aria-hidden="true"><use href="#i-chev"/></svg>
+                    </button>
+                    <button class="kv kv--act" id="kvStatusRow" type="button">
+                      <span class="kv__k">状态文字</span>
+                      <span class="kv__v" id="kvStatusText">在写代码，勿扰</span>
+                      <svg class="chev" aria-hidden="true"><use href="#i-chev"/></svg>
+                    </button>
+                    <div class="kv">
+                      <span class="kv__k">信任等级</span>
+                      <span class="kv__v" id="kvTrust">资深玩家</span>
+                    </div>
+                    </div><!-- /#meKv -->
+                  </div>
+
+                  <!-- 模型列表也是账号数据 —— 未登录时不摆（否则是在编造"我的模型"） -->
+                  <div class="sectionhead" id="meModelsHead" hidden><h2>我的模型</h2><span id="meModelsCount">3</span>
+                    <button class="btn btn--sm" id="meModelsAll" data-goto="myavatars" data-tool="myavatars" hidden>全部</button></div>
+                  <div class="favgrid" id="meModelsGrid" hidden>
+                    <button class="card card--low favcell">
+                      <span class="worldcard__thumb">Kemono<br>02</span>
+                      <span class="worldcard__name">Kemono 02</span>
+                    </button>
+                    <button class="card card--low favcell">
+                      <span class="worldcard__thumb">Office<br>Cat</span>
+                      <span class="worldcard__name">Office Cat</span>
+                    </button>
+                    <button class="card card--low favcell">
+                      <span class="worldcard__thumb">Sleepy<br>Fox</span>
+                      <span class="worldcard__name">Sleepy Fox</span>
+                    </button>
+                  </div>
+
+                  <div class="sectionhead"><h2>外观</h2></div>
+                  <div class="chipstrip" role="group" aria-label="主题" id="themeChips">
+                    <button class="chip is-on" data-theme-value="system">跟随系统</button>
+                    <button class="chip" data-theme-value="light">浅色</button>
+                    <button class="chip" data-theme-value="dark">深色</button>
+                  </div>
+
+                  <div class="sectionhead"><h2>设置</h2></div>
+                  <div class="card card--low card--static" style="padding:4px 16px">
+                    <!-- ⚠️ 这四个开关以前是**死摆设**：没有 id、scripts 里零绑定，
+                         点了毫无反应（2026-09-29 逐个 grep 确认）。
+                         现在由 screens.js 的 `wireSettingSwitches()` 接线，
+                         每一项都必须真的改变某个行为 —— 只存 localStorage 不生效
+                         等于换一种方式做假控件。**新增开关前先确认它有去处。** -->
+                    <div class="kv"><span class="kv__v">降低动效与毛玻璃</span><span class="switch is-on" id="swReduceMotion" role="switch" aria-checked="true" aria-label="降低动效与毛玻璃" tabindex="0"></span></div>
+                    <div class="kv"><span class="kv__v">显示实例 ID</span><span class="switch" id="swInstanceId" role="switch" aria-checked="false" aria-label="显示实例 ID" tabindex="0"></span></div>
+                    <div class="kv"><span class="kv__v">隐藏昵称</span><span class="switch" id="swHideNames" role="switch" aria-checked="false" aria-label="隐藏昵称" tabindex="0"></span></div>
+                    <div class="kv"><span class="kv__v">动态时间用相对时间</span><span class="switch is-on" id="swRelativeTime" role="switch" aria-checked="true" aria-label="动态时间用相对时间" tabindex="0"></span></div>
+                    <div class="kv"><span class="kv__k" style="width:auto">服务器地址</span><span class="kv__v" id="kvServerAddr" style="font-family:var(--font-mono)">未配置</span></div>
+                  </div>
+
+                  <div class="sectionhead" id="meConfigHead" hidden><h2>服务器配置</h2></div>
+                  <div class="card card--low card--static" style="padding:12px 16px" id="meConfig" hidden></div>
+
+                  <div class="sectionhead"><h2>账号</h2></div>
+                  <div class="card card--low card--static" style="padding:12px 16px">
+                    <!-- ⚠️ 这两个按钮是**产品动作**，不是样例摆设：id 由 conn.js 接线
+                         （退出登录 → authLogout，保留本机租户；忘记此服务器 → forgetAll，
+                         清掉地址与凭据并把闸门推回来）。它们曾经没有 id 也没有任何监听器，
+                         点了毫无反应 —— 而这正是用户唯一的"退出/换服务器"出口。 -->
+                    <div class="btnrow">
+                      <button class="btn" id="me-signout">退出登录</button>
+                      <button class="btn" id="me-forget" style="color:var(--md-error);border-color:var(--md-error)">忘记此服务器</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ============ 更多（工具 hub） ============
+                   桌面端 /tools/* 与统计路由的入口页。卡片由 screens_tools.js
+                   按服务端能力表渲染；浏览器模式下保持下面的静态样例。
+                   数据面命令都已由服务端实现（oss crates/remote-server）。 -->
+              <section class="page" data-screen="tools" hidden>
+                <!-- 二级导航 = 与个人页同一套语言：卡片里分组列表行
+                     （图标 + 两行文字 + chevron）。不另发明格子卡，
+                     也不放占位缩略块 —— 东西少就诚实排成清单。 -->
+                <div class="sectionhead" style="padding:0"><h2>更多</h2></div>
+
+                <div class="card card--low card--static toolgroup">
+                  <div class="sectionhead"><h2>记录</h2></div>
+                  <!-- 游戏日志不在这里：动态页顶部的「日志」chip 是唯一入口，
+                       别让同一功能有两扇门（用户明确要求）。 -->
+                  <button class="toolnav" data-tool="instancehistory" data-goto="instancehistory">
+                    <span class="toolnav__icon"><svg width="22" height="22" aria-hidden="true"><use href="#i-history"/></svg></span>
+                    <span class="toolnav__text">
+                      <span class="toolnav__title">房间历史</span>
+                      <span class="toolnav__sub">去过的实例，按时间排</span>
+                    </span>
+                    <span class="toolnav__chev"><svg width="20" height="20" aria-hidden="true"><use href="#i-chev"/></svg></span>
+                  </button>
+                  <button class="toolnav" data-tool="browsehistory" data-goto="browsehistory">
+                    <span class="toolnav__icon"><svg width="22" height="22" aria-hidden="true"><use href="#i-eye"/></svg></span>
+                    <span class="toolnav__text">
+                      <span class="toolnav__title">浏览历史</span>
+                      <span class="toolnav__sub">看过的世界、模型、群组</span>
+                    </span>
+                    <span class="toolnav__chev"><svg width="20" height="20" aria-hidden="true"><use href="#i-chev"/></svg></span>
+                  </button>
+                  <button class="toolnav" data-tool="activity" data-goto="activity">
+                    <span class="toolnav__icon"><svg width="22" height="22" aria-hidden="true"><use href="#i-history"/></svg></span>
+                    <span class="toolnav__text">
+                      <span class="toolnav__title">活动与统计</span>
+                      <span class="toolnav__sub">在线时段、常用模型排行</span>
+                    </span>
+                    <span class="toolnav__chev"><svg width="20" height="20" aria-hidden="true"><use href="#i-chev"/></svg></span>
+                  </button>
+                </div>
+
+                <div class="card card--low card--static toolgroup">
+                  <div class="sectionhead"><h2>社群</h2></div>
+                  <button class="toolnav" data-tool="groups" data-goto="groups">
+                    <span class="toolnav__icon"><svg width="22" height="22" aria-hidden="true"><use href="#i-group"/></svg></span>
+                    <span class="toolnav__text">
+                      <span class="toolnav__title">我的群组</span>
+                      <span class="toolnav__sub">加入的群组与展示中的那一个</span>
+                    </span>
+                    <span class="toolnav__chev"><svg width="20" height="20" aria-hidden="true"><use href="#i-chev"/></svg></span>
+                  </button>
+                </div>
+
+                <p class="emptynote">共同好友图、相册、偏好设置随后搬进来。</p>
+              </section>
+
+              <!-- ============ 游戏日志（桌面 /game-log，app__game_log_sessions_query） ============ -->
+              <section class="page" data-screen="gamelog" hidden>
+                <div class="controls">
+                  <div class="fieldrow">
+                    <button class="iconbtn" data-goto="feed" aria-label="返回动态">
+                      <svg width="24" height="24" aria-hidden="true" style="transform:rotate(180deg)"><use href="#i-chev"/></svg>
+                    </button>
+                    <div class="sectionhead" style="padding:0"><h2>游戏日志</h2></div>
+                  </div>
+                </div>
+                <p class="emptynote" id="glEmpty" hidden></p>
+                <div class="stack" id="glList"></div>
+              </section>
+
+              <!-- ============ 房间历史（桌面 /instance-history，app__instance_history_query） ============ -->
+              <section class="page" data-screen="instancehistory" hidden>
+                <div class="controls">
+                  <div class="fieldrow">
+                    <button class="iconbtn" data-goto="tools" aria-label="返回更多">
+                      <svg width="24" height="24" aria-hidden="true" style="transform:rotate(180deg)"><use href="#i-chev"/></svg>
+                    </button>
+                    <div class="sectionhead" style="padding:0"><h2>房间历史</h2></div>
+                  </div>
+                </div>
+                <p class="emptynote" id="ihEmpty" hidden></p>
+                <div class="stack" id="ihList"></div>
+              </section>
+
+              <!-- ============ 浏览历史（桌面 /browse-history，app__browse_history_query） ============ -->
+              <section class="page" data-screen="browsehistory" hidden>
+                <div class="controls">
+                  <div class="fieldrow">
+                    <button class="iconbtn" data-goto="tools" aria-label="返回更多">
+                      <svg width="24" height="24" aria-hidden="true" style="transform:rotate(180deg)"><use href="#i-chev"/></svg>
+                    </button>
+                    <div class="sectionhead" style="padding:0"><h2>浏览历史</h2></div>
+                    <div class="field" style="flex:1;min-width:0;margin-left:auto">
+                      <input type="text" id="bhSearch" placeholder="搜索看过的内容" aria-label="搜索浏览历史">
+                    </div>
+                  </div>
+                </div>
+                <p class="emptynote" id="bhEmpty" hidden></p>
+                <div class="stack" id="bhList"></div>
+              </section>
+
+              <!-- ============ 活动与统计（桌面 /activity，app__activity_view + avatar_usage_ranking） ============ -->
+              <section class="page" data-screen="activity" hidden>
+                <div class="controls">
+                  <div class="fieldrow">
+                    <button class="iconbtn" data-goto="tools" aria-label="返回更多">
+                      <svg width="24" height="24" aria-hidden="true" style="transform:rotate(180deg)"><use href="#i-chev"/></svg>
+                    </button>
+                    <div class="sectionhead" style="padding:0"><h2>活动与统计</h2></div>
+                  </div>
+                </div>
+                <div class="sectionhead"><h2>在线时段</h2><span id="acRange"></span></div>
+                <div class="card card--low card--static" style="padding:12px 14px">
+                  <p class="emptynote" id="acEmpty" hidden></p>
+                  <div id="acBars"></div>
+                  <p class="emptynote" id="acPeak" hidden></p>
+                </div>
+                <div class="sectionhead"><h2>常用模型</h2></div>
+                <p class="emptynote" id="acRankEmpty" hidden></p>
+                <div class="card card--low card--static" style="padding:6px 14px" id="acRank"></div>
+              </section>
+
+              <!-- ============ 共同好友图（桌面 /charts/mutual，app__mutual_graph_*） ============
+                   画布力导向图；数据来自服务端抓取任务（DB 缓存），空数据时给
+                   「开始抓取」。节点点击开详情；裸 id 绝不上屏（名字查名单）。 -->
+              <section class="page" data-screen="graph" hidden>
+                <div class="controls">
+                  <div class="fieldrow">
+                    <button class="iconbtn" data-goto="friends" aria-label="返回好友">
+                      <svg width="24" height="24" aria-hidden="true" style="transform:rotate(180deg)"><use href="#i-chev"/></svg>
+                    </button>
+                    <div class="sectionhead" style="padding:0"><h2>共同好友图</h2></div>
+                  </div>
+                </div>
+                <p class="emptynote" id="graphStatus"></p>
+                <p class="emptynote" id="graphEmpty" hidden></p>
+                <div class="graphbar" id="graphBar" hidden>
+                  <span class="graphbar__fill" id="graphBarFill"></span>
+                </div>
+                <div class="btnrow" id="graphFetchRow" hidden>
+                  <button class="btn btn--filled" id="graphFetchBtn">开始抓取</button>
+                </div>
+                <div class="btnrow" id="graphCancelRow" hidden>
+                  <button class="btn" id="graphCancelBtn">取消抓取</button>
+                </div>
+                <div class="card card--low card--static" style="padding:8px" id="graphCard">
+                  <canvas id="graphCanvas" style="width:100%;height:420px;display:block"></canvas>
+                </div>
+                <p class="emptynote">点节点看好友详情 · 绿 = 在线 · 黄 = 活跃 · 灰 = 离线</p>
+              </section>
+
+              <!-- ============ 我的模型全量（桌面 /my-avatars，数据 = my_avatars_get） ============ -->
+              <section class="page" data-screen="myavatars" hidden>
+                <div class="controls">
+                  <div class="fieldrow">
+                    <button class="iconbtn" data-goto="profile" aria-label="返回个人">
+                      <svg width="24" height="24" aria-hidden="true" style="transform:rotate(180deg)"><use href="#i-chev"/></svg>
+                    </button>
+                    <div class="sectionhead" style="padding:0"><h2>我的模型</h2></div>
+                  </div>
+                </div>
+                <p class="emptynote" id="maCount"></p>
+                <div class="favgrid" id="maGrid"></div>
+              </section>
+
+              <!-- ============ 群组（桌面 /tools/my-groups，app__vrchat_group_user_groups_get） ============ -->
+              <section class="page" data-screen="groups" hidden>
+                <div class="controls">
+                  <div class="fieldrow">
+                    <button class="iconbtn" data-goto="tools" aria-label="返回更多">
+                      <svg width="24" height="24" aria-hidden="true" style="transform:rotate(180deg)"><use href="#i-chev"/></svg>
+                    </button>
+                    <div class="sectionhead" style="padding:0"><h2>我的群组</h2></div>
+                  </div>
+                </div>
+                <p class="emptynote" id="grEmpty" hidden></p>
+                <div class="stack" id="grList"></div>
+              </section>
+
+            </div>
+
+            <!-- ---------- 详情：单栏档 = ModalBottomSheet；双栏档 = 常驻右栏 ----------
+                 （一份 DOM，两种形态 —— 不复制组件） -->
+            <aside class="detail" id="detail" aria-label="用户详情">
+              <div class="detail__handle" aria-hidden="true"></div>
+              <button class="iconbtn iconbtn--sm detail__close" id="detailClose" aria-label="关闭">
+                <svg width="24" height="24" aria-hidden="true"><use href="#i-close"/></svg>
+              </button>
+
+              <div class="detail__body">
+                <div class="detail__head">
+                  <span class="avatar avatar--64 av1" id="dAvatar">A</span>
+                  <div class="detail__title">
+                    <div class="name name--m" id="dName">示例好友 A</div>
+                    <div class="detail__presence" id="dPresence">在线 · PC · 请勿打扰</div>
+                    <div class="detail__presence" id="dPronouns">他/他</div>
+                  </div>
+                </div>
+
+                <div class="trustrow"><span class="trust" id="dTrust">示例数据</span><span class="trust trust--friend" id="dFriendBadge" hidden>好友</span></div>
+
+                <!-- 这三颗是**真动作**（此前没有 id、没有监听器，点了毫无反应）：
+                     戳一戳 → app__vrchat_boop_send；请求邀请 → app__vrchat_request_invite_send；
+                     邀请加入 → app__notification_instance_invite_send（"来我这儿"，
+                     所以要拿**我当前所在的实例**，读不到就如实说读不到）。 -->
+                <!-- 四颗真动作：戳一戳 / 请求邀请 / 邀请加入 / 收藏（0.2.31-t4）。
+                     收藏走 app__vrchat_favorite_add，目标收藏夹由 favPickPanel 选。 -->
+                <div class="btnrow" style="margin-top:12px" id="dActions">
+                  <button class="btn" id="dBoop">戳一戳</button>
+                  <button class="btn" id="dRequest">请求邀请</button>
+                  <button class="btn" id="dInvite">邀请加入</button>
+                  <button class="btn" id="dFav">收藏</button>
+                </div>
+
+                <div class="detail__section">
+                  <div class="detail__label" id="dStatusLabel">状态</div>
+                  <div class="detail__text" id="dStatusText">在写代码，勿扰</div>
+                </div>
+
+                <div class="detail__section">
+                  <div class="detail__label" id="dWorldLabel">所在世界</div>
+                  <div class="detail__text detail__text--link" id="dWorldText">Just H Party 3.0</div>
+                </div>
+
+                <div class="detail__section">
+                  <div class="detail__label" id="dBioLabel">简介</div>
+                  <div class="detail__text" id="dBioText">偶尔开麦，晚上八点后基本在线。喜欢安静的世界，被戳一律回。</div>
+                </div>
+
+                <div class="hr"></div>
+
+                <!-- 键值行在 App 内由 screens.js **按实际拿到的字段**重建
+                     （含掩码后的用户 ID 行：真实 id 只在闭包里，"复制"能带走，
+                     屏幕与 DOM 都不留 —— 见 screens.js 文件头的上屏纪律）。
+                     下面这批是浏览器模式下的样例。 -->
+                <div id="dKv">
+                <div class="kv"><span class="kv__k">平台</span><span class="kv__v">PC</span></div>
+                <div class="kv"><span class="kv__k">使用的语言</span><span class="kv__v">中文, English</span></div>
+                <div class="kv"><span class="kv__k">允许克隆模型</span><span class="kv__v">否</span></div>
+                <div class="kv"><span class="kv__k">展示的群组</span><span class="kv__v">群组实例</span></div>
+                <div class="kv"><span class="kv__k">加入时间</span><span class="kv__v">2019-07-14</span></div>
+                <div class="kv"><span class="kv__k">最近登录</span><span class="kv__v">2026-09-19 07:41</span></div>
+                <div class="kv"><span class="kv__k">最近活动</span><span class="kv__v">2026-09-19 07:51</span></div>
+                <div class="kv"><span class="kv__k">当前模型</span><span class="kv__v">Kemono 02</span></div>
+                <div class="kv"><span class="kv__k">关系</span><span class="kv__v">好友</span></div>
+                </div><!-- /#dKv -->
+
+                <!-- 更多资料：打开面板后**异步**取一次 app__vrchat_user_profile_get
+                     （桌面版同一个口子，`/users/{id}/profile?withGroupsAndWorlds=true`）。
+                     ⚠️⚠️ 字段必须**白名单**渲染：那个响应里还带着 email/discordId/
+                     steamId/twoFactorAuthEnabled，以及 `friends`/`onlineFriends` ——
+                     后者是**我自己的好友 id 全表**。整体 dump 就是一次数据事故。
+                     拉不到 / 会话没登录 → 整段收起，不摆空壳。 -->
+                <div class="detail__section" id="dExtraSection" hidden>
+                  <div class="detail__label labelrow">
+                    <span>更多资料</span>
+                    <button class="btn btn--sm" id="dMutualBtn" hidden>共同好友</button>
+                  </div>
+                  <div id="dExtra"></div>
+                  <!-- 共同好友按需拉（app__user_mutual_friends_list_get 会**真的打一次
+                       VRChat**）：不点不发，避免每开一个面板就多一次外呼。 -->
+                  <div class="stack" id="dMutualBox" hidden></div>
+                </div>
+
+                <div class="sectionhead" style="margin-top:14px"><h2>最近动态</h2></div>
+                <div class="stack" id="dFeed">
+                  <div class="card card--low card--static" style="padding:10px 14px">
+                    <div class="rowline"><span class="kind">07:41</span></div>
+                    <div class="body" style="margin-top:2px">上线，进入 Just H Party 3.0</div>
+                  </div>
+                  <div class="card card--low card--static" style="padding:10px 14px">
+                    <div class="rowline"><span class="kind">昨天 23:41</span></div>
+                    <div class="body" style="margin-top:2px">换上了模型 Kemono 02</div>
+                  </div>
+                </div>
+
+                <!-- 备注（memo）：screens_tools.js 监听 vrcx:detail 后
+                     app__memo_get_user 读、app__memo_save_user 写。
+                     没有用户 id（非好友的动态用户）就整段收起。 -->
+                <div class="detail__section" id="dMemoSection" hidden>
+                  <div class="detail__label labelrow">
+                    <span>备注</span>
+                    <button class="btn btn--sm" id="dMemoEdit" hidden>编辑</button>
+                  </div>
+                  <div class="detail__text" id="dMemoText"></div>
+                  <div id="dMemoForm" hidden>
+                    <div class="field" style="margin-top:6px">
+                      <textarea id="dMemoInput" rows="3" placeholder="只有自己能看到（服务器上的私人备注）"></textarea>
+                    </div>
+                    <div class="btnrow" style="margin-top:6px">
+                      <button class="btn btn--filled" id="dMemoSave">保存</button>
+                      <button class="btn" id="dMemoCancel">取消</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 动态记录：screens_tools.js 监听 vrcx:detail 后用
+                     app__friend_log_history_query 拉（桌面 /social/friend-log 的数据）。
+                     只读；没有登录或拿不到就整段收起，不摆样例。 -->
+                <div class="sectionhead" style="margin-top:14px" id="dLogHead" hidden><h2>记录</h2></div>
+                <div class="stack" id="dLog" hidden></div>
+              </div>
+            </aside>
+
+            <!-- 详情列空状态：双栏档未选中好友时占据第 2 列（与 #detail 同格，
+                 栅格位写在 app.css 的 840+ 那一档里），显隐由 .app.detail-open 切。
+                 ⚠️ 它必须住在 #detail **外面**：原先放在 #detail 内部，而 #detail 在
+                 「没选中好友」时被 hidden 打上 display:none，于是该露出它的那一刻
+                 正好连祖先一起被藏掉，谁也没见过它（0.2.26 实测：自身 display:flex，
+                 可见像素 0）。单栏档由 CSS 隐藏这块。 -->
+            <div class="detail__placeholder" id="detailPlaceholder">
+              <div class="detail__placeholder-icon"><svg width="40" height="40" aria-hidden="true"><use href="#i-friends"/></svg></div>
+              <p class="detail__placeholder-title">还没选中好友</p>
+              <p class="emptynote">在动态或好友列表里点开一位好友，<br>这里会显示资料、动态和记录。</p>
+              <div class="statgrid detail__ph-stats" id="phStats"></div>
+            </div>
+
+            <!-- 单栏档：抽屉遮罩 -->
+            <div class="scrim" id="scrim"></div>
+
+            <!-- 拖分栏手柄（双栏档才出现） -->
+            <button class="splitter" id="splitter" aria-label="拖动调整列表宽度" tabindex="0"></button>
+
+          </main>
+
+          <!-- ============ 底部 5 Tab（紧凑档；「更多」走顶栏工具按钮） ============ -->
+          <nav class="nav app__bar" aria-label="主导航">
+            <button class="navitem is-on" data-goto="feed">
+              <span class="navitem__ind"><svg aria-hidden="true"><use href="#i-feed"/></svg></span>
+              <span class="navitem__label">动态</span>
+            </button>
+            <button class="navitem" data-goto="friends">
+              <span class="navitem__ind"><svg aria-hidden="true"><use href="#i-friends"/></svg></span>
+              <span class="navitem__label">好友</span>
+            </button>
+            <button class="navitem" data-goto="home">
+              <span class="navitem__ind"><svg aria-hidden="true"><use href="#i-home"/></svg></span>
+              <span class="navitem__label">主页</span>
+            </button>
+            <button class="navitem" data-goto="favorites">
+              <span class="navitem__ind"><svg aria-hidden="true"><use href="#i-fav"/></svg></span>
+              <span class="navitem__label">收藏</span>
+            </button>
+            <button class="navitem" data-goto="profile">
+              <span class="navitem__ind"><svg aria-hidden="true"><use href="#i-me"/></svg></span>
+              <span class="navitem__label">个人</span>
+            </button>
+          </nav>
+
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <aside class="side">
+      <h2>实测（每次切换档位重算）</h2>
+      <dl id="metrics">
+        <dt>容器</dt><dd id="m-size">—</dd>
+        <dt>导航形态</dt><dd id="m-nav">—</dd>
+        <dt>内容列</dt><dd id="m-cols">—</dd>
+        <dt>动态卡宽</dt><dd id="m-card">—</dd>
+        <dt>详情</dt><dd id="m-detail">—</dd>
+        <dt>横向溢出</dt><dd id="m-overflow">—</dd>
+      </dl>
+      <p class="side__note">
+        断点走 <code>@container app</code>（测组件所在容器的宽度，不是窗口宽度）：
+        小于 600 走底部 5 Tab；600 起换成左侧导航；<b>840 起且横屏</b>才拆成「列表 + 详情」双栏。
+        放进 iPad 分屏、多窗口或弹窗里都不会破版。
+      </p>
+      <p class="side__note">
+        <b>这几档不是「另一个模式」。</b>同一份 DOM、同一套令牌、同一个安装包 ——
+        手机端装的就是它，平板只是容器变宽之后的自然重排。
+      </p>
+      <p class="side__note">
+        组件取自 App 现有实现（<code>FeedScreen</code> / <code>FriendsScreen</code> /
+        <code>HomeScreen</code> / <code>FavoritesScreen</code> / <code>ProfileScreen</code> /
+        <code>UserProfileSheet</code>），
+        颜色按真机截图逐像素取值，字阶与形状照抄 <code>Theme.kt</code>。
+      </p>
+    </aside>
+
+  </div>
+</div>
+
+<!-- ============ 连接闸门 ============
+     结构照手机端 ui/screens/LoginScreen.kt 的**渐进展开**：先只问服务器地址
+     （自签证书指纹默认折叠 —— 局域网明文连接不需要它），连上之后才出现
+     「创建第一个用户 / 加入这台服务器」，再之后才是选账号或用户名密码，
+     二步验证是模态。此前这里是"所有字段一次平铺"，既不像 App 也没有主次。
+     只在 App 内（index.html#device）且 window.VRCX.available 时显示；
+     浏览器模式下它不出现，所以逐档出图与四档布局断言不受影响。 -->
+<div class="gate" id="gate" hidden>
+  <div class="gate__pane">
+
+    <header class="gate__head">
+      <h1>连接到你的服务器</h1>
+      <p>VRCX-0 服务端保存会话，平板只是显示端</p>
+    </header>
+
+    <!-- 第 1 步：服务器地址 -->
+    <div class="gate__field">
+      <label class="gate__label" for="g-addr">服务器地址</label>
+      <input class="gate__input" id="g-addr" type="text" inputmode="url"
+             placeholder="192.168.1.1" autocomplete="off" spellcheck="false">
+    </div>
+
+    <!-- 指纹默认折叠：只有 https + 自签证书才需要 -->
+    <div class="gate__field" id="g-pin-wrap" hidden>
+      <label class="gate__label" for="g-pin">证书指纹（SPKI SHA-256）</label>
+      <input class="gate__input" id="g-pin" type="text" placeholder="Base64，脚本会打印"
+             autocomplete="off" spellcheck="false">
+      <p class="gate__support">只在使用 https 地址时需要。留空即以明文连接局域网服务器。</p>
+    </div>
+
+    <p class="gate__support is-error" id="g-pin-warn" hidden></p>
+
+    <div class="gate__actions">
+      <button class="gate__link" id="g-pin-toggle">服务器用了自签证书</button>
+      <span class="gate__spacer"></span>
+      <button class="btn btn--filled" id="g-connect">连接<svg class="btn__arrow" width="16" height="16"
+              viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h13"/><path d="M13 6l6 6-6 6"/>
+      </svg></button>
+    </div>
+
+    <p class="gate__status" id="g-status"></p>
+    <p class="gate__support is-ok" id="g-discovered" hidden></p>
+
+    <!-- 第 2 步：在这台服务器上占一个名额 -->
+    <section class="gate__step" id="g-claim" hidden>
+      <h2 id="g-claim-title">创建第一个用户</h2>
+      <p class="gate__support" id="g-claim-desc"></p>
+      <div class="gate__field">
+        <label class="gate__label" for="g-label">设备名称</label>
+        <input class="gate__input" id="g-label" type="text" placeholder="平板" autocomplete="off">
+        <p class="gate__support">服务器上用这个名字区分设备</p>
+      </div>
+      <div class="gate__field" id="g-invite-wrap" hidden>
+        <label class="gate__label" for="g-invite">邀请码</label>
+        <input class="gate__input" id="g-invite" type="text" autocomplete="off">
+      </div>
+      <button class="btn btn--filled gate__wide" id="g-claim-go">创建</button>
+    </section>
+
+    <!-- 第 3 步：选账号（服务器已存凭据的账号，免密） -->
+    <section class="gate__step" id="g-pick" hidden>
+      <h2>选择账号</h2>
+      <div class="gate__accounts" id="g-accounts"></div>
+    </section>
+
+    <!-- 第 3 步（备选）：用户名密码 -->
+    <section class="gate__step" id="g-pwd" hidden>
+      <h2 id="g-pwd-title">登录 VRChat 账号</h2>
+      <button class="gate__link" id="g-pwd-toggle">用用户名密码登录</button>
+      <div class="gate__fields" id="g-pwd-form" hidden>
+        <div class="gate__field">
+          <label class="gate__label" for="g-user">用户名</label>
+          <input class="gate__input" id="g-user" type="text" autocomplete="username">
+        </div>
+        <div class="gate__field">
+          <label class="gate__label" for="g-pass">密码</label>
+          <input class="gate__input" id="g-pass" type="password" autocomplete="current-password">
+        </div>
+        <button class="btn gate__wide" id="g-login">登录并保存凭据</button>
+      </div>
+    </section>
+
+    <footer class="gate__foot">
+      <button class="gate__link" id="g-close" hidden>先看看界面</button>
+      <button class="gate__link" id="g-forget">清除本机配置</button>
+    </footer>
+  </div>
+
+  <!-- 二步验证：强制模态，没答完不能继续（与手机端 TwoFactorDialog 一致） -->
+  <div class="gate__modal" id="g-2fa" hidden>
+    <div class="gate__dialog" role="dialog" aria-modal="true" aria-labelledby="g-2fa-title">
+      <h2 id="g-2fa-title">需要二步验证</h2>
+      <p class="gate__support" id="g-2fa-methods" hidden></p>
+      <div class="gate__field">
+        <label class="gate__label" for="g-2fa-code">验证码</label>
+        <input class="gate__input" id="g-2fa-code" type="text" inputmode="numeric"
+               autocomplete="one-time-code">
+      </div>
+      <p class="gate__support is-error" id="g-2fa-error" hidden></p>
+      <div class="gate__actions gate__actions--end">
+        <button class="btn btn--filled" id="g-2fa-go">验证</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- 二次确认（个人页的「退出登录 / 忘记此服务器」） ----------
+     刻意放在 #gate **外面**：闸门关着的时候也要能弹（用户从个人页点"忘记此服务器"
+     时闸门正是关着的）。样式复用闸门的模态类，但因此也踩不到 `.gate [hidden]`
+     那条兜底 —— 必须在 gate.css 里单独补一条 `#confirm[hidden]`，否则
+     `.gate__modal{display:flex}` 会把 [hidden] 盖掉，一进 App 就露出确认框。 -->
+<div class="gate__modal" id="confirm" hidden>
+  <div class="gate__dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <h2 id="confirm-title"></h2>
+    <p class="gate__support" id="confirm-body"></p>
+    <div class="gate__actions gate__actions--end">
+      <button class="btn" id="confirm-cancel">取消</button>
+      <button class="btn" id="confirm-ok"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- 全局搜索（服务端 app__quick_search_query） ----------
+     服务端支持时按 好友/头像/世界/群组 分组；不支持（501 / 能力表里没有）时
+     降级为「已加载数据的本地过滤」。结果行点好友开详情面板，其余只展示。
+     ⚠️ 与 #confirm 同理：不在 .gate 里，[hidden] 必须有专属兜底（app.css）。 -->
+<div class="panel" id="searchPanel" hidden>
+  <div class="panel__dialog" role="dialog" aria-modal="true" aria-labelledby="searchTitle">
+    <div class="panel__head">
+      <h2 class="panel__title" id="searchTitle">搜索</h2>
+      <button class="iconbtn" id="searchClose" aria-label="关闭搜索">
+        <svg width="24" height="24" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+    <input class="panel__input" id="searchInput" type="text" placeholder="好友 / 头像 / 世界 / 群组"
+           aria-label="搜索关键词" autocomplete="off">
+    <!-- 档位：我的 = 服务端目录（quick_search）或本地过滤；全网 = VRChat 实时搜
+         （app__vrchat_search_*，三条命令服务器都支持时才显示这一排）。 -->
+    <div class="panel__chips" id="searchScope" hidden>
+      <button class="chip is-on" data-scope="mine">我的</button>
+      <button class="chip" data-scope="global">全网</button>
+    </div>
+    <p class="panel__hint" id="searchHint" hidden></p>
+    <div class="panel__body" id="searchResults"></div>
+  </div>
+</div>
+
+<!-- ---------- 世界详情（app__world_get，信封包完整世界对象） ----------
+     触发点：好友分组头 / 浏览历史的世界行 / 收藏的世界格 / 全网搜索的世界行。
+     只显示名字/作者/描述/统计 —— 裸 id 永不上屏。 -->
+<div class="panel" id="worldPanel" hidden>
+  <div class="panel__dialog" role="dialog" aria-modal="true" aria-labelledby="worldTitle">
+    <div class="panel__head">
+      <h2 class="panel__title" id="worldTitle">世界详情</h2>
+      <button class="iconbtn" id="worldClose" aria-label="关闭">
+        <svg width="24" height="24" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+    <div class="panel__body">
+      <div class="worldhero" id="worldHero">世界</div>
+      <p class="emptynote" id="worldErr" hidden></p>
+      <div id="worldKv"></div>
+      <p class="worlddesc" id="worldDesc"></p>
+      <!-- 收藏这个世界（0.2.31-t4）：数据读到才出现（screens_tools 控制 hidden）。 -->
+      <div class="btnrow" style="margin-top:12px">
+        <button class="btn" id="wFav" hidden>收藏这个世界</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- 通知中心（服务端 app__notification_list_query） ----------
+     列表 + 未读点 + 全部标为已读（location=local，纯本地 DB 写，不动 VRChat）。
+     打开时拉一次；空列表如实写"没有通知"，不编数据。 -->
+<div class="panel" id="notifPanel" hidden>
+  <div class="panel__dialog" role="dialog" aria-modal="true" aria-labelledby="notifTitle">
+    <div class="panel__head">
+      <h2 class="panel__title" id="notifTitle">通知</h2>
+      <button class="btn" id="notifMarkSeen" hidden>全部标为已读</button>
+      <button class="iconbtn" id="notifClose" aria-label="关闭通知">
+        <svg width="24" height="24" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+    <div class="panel__body" id="notifList"></div>
+  </div>
+</div>
+
+<!-- ---------- 通知详情（2026-09-29） ----------
+     以前通知**只能看不能点**：renderNotifs 画出来的行既没有 click 也没有 href，
+     点了零反应。这里按行打开详情，并按通知类型给出真正能用的操作
+     （接受邀请 / 回戳 / 标记已读 …），见 screens.js 的 openNotifDetail()。
+     ⚠️ location 这类字段里含 wrld_/usr_ 开头的裸 id，渲染前必须过 scrubIds。 -->
+<div class="panel" id="notifDetailPanel" hidden>
+  <div class="panel__dialog" role="dialog" aria-modal="true" aria-labelledby="ndTitle">
+    <div class="panel__head">
+      <h2 class="panel__title" id="ndTitle">通知详情</h2>
+      <button class="iconbtn" id="ndClose" aria-label="关闭通知详情">
+        <svg width="24" height="24" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+    <div class="panel__body" id="ndBody"></div>
+  </div>
+</div>
+
+<!-- ---------- 戳一戳表情选择（2026-09-29） ----------
+     以前「戳一戳」只发 `{userId}`，服务端 `boop_send` 的 emoji_id 一直空着 ——
+     也就是永远只能戳一个"白板"。这里让用户在 VRChat 内置 65 个里挑一个。
+     ⚠️ 预览图**必须**走 App 的图片代理（app__external_api_image_data_url_get），
+     不能直接 <img src="https://wiki-files.vrchat.com/…">：
+     外域网在 WebView 里未必可达，直链会变成一屏裂图。 -->
+<div class="panel" id="boopPanel" hidden>
+  <div class="panel__dialog" role="dialog" aria-modal="true" aria-labelledby="boopTitle">
+    <div class="panel__head">
+      <h2 class="panel__title" id="boopTitle">选个表情戳回去</h2>
+      <button class="iconbtn" id="boopClose" aria-label="关闭">
+        <svg width="24" height="24" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+    <div class="panel__body">
+      <div class="emoji-grid" id="boopGrid"></div>
+      <div class="btnrow" style="margin-top:16px">
+        <button class="btn btn--filled" id="boopSend">就这样戳</button>
+        <button class="btn" id="boopPlain">不带表情</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- 收藏夹选择（0.2.31-t4） ----------
+     「加收藏」的公共弹层：好友详情的「收藏」与世界详情的「收藏这个世界」
+     都在这里挑目标收藏夹。组卡片来自收藏基线的 favorite*Groups
+     （displayName/name/count/capacity），容量满了禁用并如实标「已满」。
+     真正的写入是 app__vrchat_favorite_add {type, favoriteId, tags}。 -->
+<div class="panel" id="favPickPanel" hidden>
+  <div class="panel__dialog" role="dialog" aria-modal="true" aria-labelledby="favPickTitle">
+    <div class="panel__head">
+      <h2 class="panel__title" id="favPickTitle">加进收藏夹</h2>
+      <button class="iconbtn" id="favPickClose" aria-label="关闭">
+        <svg width="24" height="24" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+    <div class="panel__body">
+      <p class="emptynote" id="favPickNote" hidden></p>
+      <div class="favgrid" id="favPickGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- 收藏夹新建/编辑（0.2.31-t4） ----------
+     新建与改名共用一个面板。写入是 app__vrchat_favorite_group_save
+     {type, group, displayName, visibility}；新建时的夹键（"worlds3" 这种）
+     按「同型夹的最大序号 + 1」在客户端推算，超出 favoriteLimits 上限就拒绝。 -->
+<div class="panel" id="favEditPanel" hidden>
+  <div class="panel__dialog" role="dialog" aria-modal="true" aria-labelledby="favEditTitle">
+    <div class="panel__head">
+      <h2 class="panel__title" id="favEditTitle">新建收藏夹</h2>
+      <button class="iconbtn" id="favEditClose" aria-label="关闭">
+        <svg width="24" height="24" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+    <div class="panel__body">
+      <input class="panel__input" id="favEditName" type="text" maxlength="32"
+             placeholder="收藏夹名字（留空则用默认名）" />
+      <div class="chipstrip" role="group" aria-label="可见性" id="favEditVis" style="margin-top:12px">
+        <button class="chip" data-vis="private">私有</button>
+        <button class="chip" data-vis="friends">好友可见</button>
+        <button class="chip" data-vis="public">公开</button>
+      </div>
+      <p class="emptynote" id="favEditNote" hidden></p>
+      <div class="btnrow" style="margin-top:16px">
+        <button class="btn btn--filled" id="favEditSave">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VRChat 内置 boop emoji 表（脚本生成，禁手改）。必须在 screens.js **之前**：
+     screens.js 的 `window.VRCX_DEFAULT_EMOJIS` 读它。 -->
+<script src="scripts/emojis.js"></script>
+<script src="scripts/main.js"></script>
+<script src="scripts/conn.js"></script>
+<!-- 五屏真实数据。必须在 conn.js **之后**：它订阅的是 conn.js 建立的 window.VRCXCon。 -->
+<script src="scripts/screens.js"></script>
+<!-- 工具屏（游戏日志 / 房间历史 / 浏览历史 / 群组 / 详情·记录）。
+     依赖 VRCXCon 与 screens.js 派发的 vrcx:detail，排在两者之后。 -->
+<script src="scripts/screens_tools.js"></script>
+<script>
+  /* PWA：仅在安全上下文（https / localhost）注册 SW，局域网 http 下自动跳过，不影响浏览 */
+  if ('serviceWorker' in navigator &&
+      (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+/* ============================================================
+   tokens.css — VRCX-0 设计令牌
+   —— 全部来自**已经做出来的那个 App**，不是另起一套：
+
+   · 颜色  M3 语义槽位，取值逐像素对齐真机截图
+           docs/android-after.png（1080×2412，density 3.0）
+           primary #0054d6 / surface #faf8ff / Card #e0e2ef / 选中 chip #e2dfff
+           底部导航 #ecedfb / 角标 #b3261e —— 采样值见 README「色彩对照表」
+   · 字阶  1:1 抄 android/.../ui/theme/Theme.kt 的 VrcxTypography
+           （fontSize / lineHeight / letterSpacing 三个数字都照抄，未加码）
+   · 形状  M3 shape scale：4 / 8 / 12 / 16 / full
+           Card = 12dp，FilterChip = 8dp —— 已用截图角点剖面验证（见 README）
+   · 间距  1dp == 1px（本 Demo 的约定）。列表 contentPadding 12/8、
+           卡片间 8dp、卡内 padding 12dp —— 与 Compose 源码同值
+   · 字体  FontFamily.Default（Android 上是 Roboto + Noto Sans CJK）
+           与 FontFamily.Monospace（服务器地址）—— **不再引 Google Fonts CDN**
+   ============================================================ */
+
+:root {
+  /* ---------- M3 色彩槽位（浅色，取自 App 真机） ---------- */
+  --md-primary: #0054d6;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #dae2ff;
+  --md-on-primary-container: #001a41;
+
+  --md-secondary-container: #e2dfff;      /* 选中 chip / 导航指示器 */
+  --md-on-secondary-container: #1b1b2f;
+
+  --md-surface: #faf8ff;                  /* 页面底色 */
+  --md-surface-container-lowest: #ffffff;
+  --md-surface-container-low: #f3f2fa;    /* 浅底 Card：统计格 / 聚集地 / 资料卡 */
+  --md-surface-container: #ecedfb;        /* 底部导航栏 */
+  --md-surface-container-high: #e8e8f6;
+  --md-surface-container-highest: #e0e2ef;/* 填充 Card：动态卡 / 好友行 */
+
+  --md-on-surface: #181b25;
+  --md-on-surface-variant: #434654;       /* 次级文字（服务器地址 / 位置 / 时间） */
+  --md-outline: #737685;                  /* 未选中 chip 描边、输入框描边 */
+  --md-outline-variant: #c3c6d7;
+
+  /* 禁用态（M3：容器/描边 = onSurface 12%，文字 = onSurface 38%）。
+     用固定 rgba 而不是 `color-mix(… transparent)`：minSdk 26 ⇒ 系统 WebView
+     可能是很老的 Chrome，而 color-mix 要 Chrome 111+。
+     "这个按钮现在到底能不能点"是不能赌的一类视觉。 */
+  --md-on-surface-a38: rgba(24, 27, 37, 0.38);
+  --md-on-surface-a12: rgba(24, 27, 37, 0.12);
+
+  --md-error: #b3261e;                    /* 未读角标（colorScheme.error） */
+  --md-on-error: #ffffff;
+  --md-scrim: rgba(0, 0, 0, 0.32);
+
+  /* ---------- 连接状态（VrcxColors，与 Theme.kt 同源） ---------- */
+  --vrcx-connected: #1d9e75;
+  --vrcx-reconnecting: #ba7517;
+  --vrcx-disconnected: #888780;
+  --vrcx-error: #e24b4a;
+
+  /* ---------- 好友在线状态点（FriendsScreen presenceColor） ----------
+     ⚠️ 2026-09-29 换成 **VRChat 官方语义色**（桌面版 src/src/styles/globals.css:157-161）。
+     原来那组（#1d9e75 / #ba7517 / #888780）是项目自己配的，只有 3 档，
+     把 join me / ask me / busy 全挤进同一档 —— 表现就是"一部分人的灯没规律地不一样"。
+     五档取 Desktop = VRChat 客户端的实际取值，不是配色偏好，改了就跟官方对不上。 */
+  --presence-online: #2ed319;   /* active —— 绿灯 */
+  --presence-joinme: #00b8ff;   /* join me —— 蓝 */
+  --presence-busy: #c80928;     /* busy —— 红 */
+  --presence-askme: #e97c03;    /* ask me —— 橙 */
+  --presence-offline: #737f8d;  /* offline —— 灰 */
+  /* 兼容老引用：项目里曾用 presence-active 指"点点在线但没进实例"那一档，
+     桌面版这一档就是 offline 灰（或 active 空心），没有单独的黄。 */
+  --presence-active: var(--presence-online);
+
+  /* ---------- 字阶：VrcxTypography 逐条对应 ---------- */
+  --font: Roboto, "Noto Sans SC", "Noto Sans CJK SC", "Source Han Sans SC",
+          "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "Roboto Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
+
+  --headline-s: 22px; --headline-s-lh: 28px; --headline-s-ls: -0.2px;  /* 统计数字 */
+  --title-l: 20px;    --title-l-lh: 26px;    --title-l-ls: -0.2px;     /* 屏幕标题 */
+  --title-m: 16px;    --title-m-lh: 22px;    --title-m-ls: 0;          /* 卡片/分区标题 */
+  --title-s: 14px;    --title-s-lh: 20px;    --title-s-ls: 0;          /* 列表行名字 */
+  --body-l: 16px;     --body-l-lh: 22px;     --body-l-ls: 0;           /* 用户详情正文 */
+  --body-m: 14px;     --body-m-lh: 19px;     --body-m-ls: 0;           /* 卡片正文 */
+  --body-s: 12px;     --body-s-lh: 16px;     --body-s-ls: 0.1px;       /* 位置 / 次级行 */
+  --label-l: 14px;    --label-l-lh: 19px;    --label-l-ls: 0;          /* 按钮 / chip 文字 */
+  --label-m: 12px;    --label-m-lh: 16px;    --label-m-ls: 0.3px;      /* 副标题 / 导航标签 */
+  --label-s: 11px;    --label-s-lh: 15px;    --label-s-ls: 0.4px;      /* 全 App 用得最多的一档 */
+
+  --w-normal: 400;
+  --w-medium: 500;
+  --w-semi: 600;
+
+  /* ---------- M3 形状 ---------- */
+  --shape-xs: 4px;    /* 输入框 */
+  --shape-s: 8px;     /* FilterChip / 缩略图 / 可点行 */
+  --shape-m: 12px;    /* 填充 Card */
+  --shape-l: 16px;
+  --shape-xl: 28px;   /* ModalBottomSheet 顶角 */
+  --shape-full: 999px;
+
+  /* ---------- 间距（1dp = 1px） ---------- */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 20px;
+  --s6: 24px;
+  --s7: 28px;
+
+  /* ---------- 尺寸 ---------- */
+  --touch-min: 48px;     /* M3 最小触控目标 */
+  --chip-h: 32px;
+  --iconbtn: 48px;
+  --field-h: 56px;       /* OutlinedTextField */
+  --navbar-h: 80px;
+  --rail-w: 80px;
+
+  /* ---------- 层级 ---------- */
+  --elev-1: 0 1px 2px rgba(24, 27, 37, 0.10), 0 1px 3px 1px rgba(24, 27, 37, 0.06);
+  --elev-2: 0 1px 2px rgba(24, 27, 37, 0.12), 0 2px 6px 2px rgba(24, 27, 37, 0.08);
+
+  /* ---------- 动效（VrcxMotion） ---------- */
+  --motion-fast: 120ms;
+  --motion-std: 220ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* 动效降级：App 里有 reducedMotionAndBlur 设置项，这里跟随系统 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================
+   深色主题（2026-09-30：把个人页「外观」3 档主题从死控件变成真功能）
+   ------------------------------------------------------------
+   所有颜色都是 M3 语义槽位 —— 浅色那套在 :root 里，这里只覆盖需要翻转的槽位。
+   presence / vrcx / error / scrim 是语义色， deliberately 不覆盖（深色下照样成立）。
+
+   为什么放 :root 而不是 .app：宽屏视觉层是 @container 查询，会把 --md-pane 等
+   写在 .app 上（特异性 0,0,1）。本块用 :root[data-theme="dark"]（0,2,0）足以压过它，
+   而原先 `html:not(.brand) .app { --md-surface:#f2f4fa }` 是 0,2,1，会反过来吃掉深色 ——
+   所以那条已删，改由 :root 默认 + 本块控制（见 app.css 同名注释）。
+
+   「跟随系统」= 不设 data-theme，交给下方 prefers-color-scheme 媒体查询；
+   用户显式选「浅色」时 :not([data-theme="light"]) 把它挡掉，强制浅色。 */
+:root[data-theme="dark"] {
+  --md-primary: #b6caff;
+  --md-on-primary: #00296e;
+  --md-primary-container: #00458f;
+  --md-on-primary-container: #d8e2ff;
+  --md-secondary-container: #434659;
+  --md-on-secondary-container: #c6c7e3;
+  --md-surface: #121318;
+  --md-surface-container-lowest: #0e0f14;
+  --md-surface-container-low: #1a1b21;
+  --md-surface-container: #1e1f26;
+  --md-surface-container-high: #282a31;
+  --md-surface-container-highest: #2e3037;
+  --md-on-surface: #e3e1e9;
+  --md-on-surface-variant: #c5c6d6;
+  --md-outline: #8e8fa0;
+  --md-outline-variant: #44474e;
+  --md-on-surface-a38: rgba(227, 225, 233, 0.38);
+  --md-on-surface-a12: rgba(227, 225, 233, 0.12);
+  --md-pane: #1e1f26;
+  --md-card-line: rgba(227, 225, 233, 0.10);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --md-primary: #b6caff;
+    --md-on-primary: #00296e;
+    --md-primary-container: #00458f;
+    --md-on-primary-container: #d8e2ff;
+    --md-secondary-container: #434659;
+    --md-on-secondary-container: #c6c7e3;
+    --md-surface: #121318;
+    --md-surface-container-lowest: #0e0f14;
+    --md-surface-container-low: #1a1b21;
+    --md-surface-container: #1e1f26;
+    --md-surface-container-high: #282a31;
+    --md-surface-container-highest: #2e3037;
+    --md-on-surface: #e3e1e9;
+    --md-on-surface-variant: #c5c6d6;
+    --md-outline: #8e8fa0;
+    --md-outline-variant: #44474e;
+    --md-on-surface-a38: rgba(227, 225, 233, 0.38);
+    --md-on-surface-a12: rgba(227, 225, 233, 0.12);
+    --md-pane: #1e1f26;
+    --md-card-line: rgba(227, 225, 233, 0.10);
+  }
+}

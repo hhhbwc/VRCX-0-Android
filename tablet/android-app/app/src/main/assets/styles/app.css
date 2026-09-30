@@ -1,0 +1,1605 @@
+/* ============================================================
+   app.css — 被演示的界面：VRCX-0 瘦客户端（VRChat 伴侣 App）
+   —— 组件按 android/app/src/main/java/com/vrcx0/android/ui/** 复刻：
+      顶栏 = ui/components/TopBar.kt::VrcxTopBar
+      动态 = ui/screens/FeedScreen.kt（OutlinedTextField + FilterChip + FeedCard）
+      好友 = ui/screens/FriendsScreen.kt（FriendRow / FriendRoomHeader）
+      主页 = ui/screens/HomeScreen.kt（SectionHeader / GatheringCard / StatsGrid）
+      收藏 = ui/screens/FavoritesScreen.kt
+      个人 = ui/screens/ProfileScreen.kt
+      详情 = ui/sheets/DetailSheets.kt::UserProfileSheet
+   响应式：@container app 四档 —— 手机 / 平板竖 / 平板横 / 大屏
+   ============================================================ */
+
+* { box-sizing: border-box; }
+
+/* ============================================================
+   1. 骨架
+   紧凑档：topbar / content / bottombar 三行，没有导轨
+   平板起：左侧导航（bar 退场），内容区可以是「列表 + 详情」双栏
+   ============================================================ */
+.app {
+  --rail-w: 0px;          /* 紧凑档没有导轨 —— 用 0 而不是 display:none，
+                             否则栅格轨道还在、内容被挤到第二列（上一版就栽在这） */
+  --list-w: 360px;        /* 双栏时的列表宽，可拖 */
+  --gutter: var(--s3);    /* 列表 contentPadding 12dp */
+  position: relative;
+  display: grid;
+  /* ⚠️⚠️ **不要**给 grid-template-columns 加 transition：
+     容器查询会在首帧把轨道从 0 改到 80/232，一条已经存在的 transition
+     会把「计算值」永久停在过渡起点 —— 实测 getComputedStyle 读到
+     "0px 834px"，而 railVar 明明已经是 80px（无头 / 虚拟时间下必现，
+     真浏览器里也只是慢 220ms 才对）。要动画就等首帧之后再开，见 .detail。 */
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  overflow: hidden;
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  font: var(--w-normal) var(--body-m) / var(--body-m-lh) var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+.app__topbar  { grid-column: 2; grid-row: 1; }
+/* 导航的 display 写在各个容器上，**不要**写在共用的 .nav 上 ——
+   否则 .nav{display:flex} 会盖掉「紧凑档隐藏导轨」，
+   手机上会露出一条 16px 的导轨残影（且不报错） */
+.app__rail    { grid-column: 1; grid-row: 1 / -1; display: none; }
+.app__content { grid-column: 2; grid-row: 2; min-height: 0; position: relative; }
+.app__bar     { grid-column: 1 / -1; grid-row: 3; display: flex; }
+
+/* ============================================================
+   2. 顶栏 VrcxTopBar：色点 + 头像 |……| 铃铛 + 地址 + 在线数
+   ============================================================ */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 8px var(--s3);
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+}
+
+/* 连接状态色点：瘦客户端不能省 —— 没有它「服务端没数据」和「断线了」长得一样 */
+.conn {
+  width: 8px; height: 8px; flex: none;
+  border-radius: var(--shape-full);
+  background: var(--vrcx-connected);
+}
+.conn--reconnect { background: var(--vrcx-reconnecting); animation: conn-pulse 1.2s linear infinite alternate; }
+.conn--off { background: var(--vrcx-error); }
+.conn--idle { background: var(--vrcx-disconnected); }
+@keyframes conn-pulse { from { opacity: .35; } to { opacity: 1; } }
+
+/* 头像：App 里是 RemoteAvatar，取不到图时退化成首字母圆（与 App 同行为） */
+.avatar {
+  flex: none;
+  display: grid; place-items: center;
+  width: 32px; height: 32px;
+  border-radius: var(--shape-full);
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  font-size: var(--label-m); font-weight: var(--w-medium);
+  letter-spacing: 0;
+  overflow: hidden;
+}
+.avatar--24 { width: 24px; height: 24px; font-size: var(--label-s); }
+.avatar--40 { width: 40px; height: 40px; font-size: var(--label-l); }
+.avatar--56 { width: 56px; height: 56px; font-size: var(--title-m); }
+.avatar--64 { width: 64px; height: 64px; font-size: var(--title-l); }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.spacer { flex: 1; min-width: 0; }
+
+.iconbtn {
+  position: relative;
+  flex: none;
+  display: grid; place-items: center;
+  width: var(--iconbtn); height: var(--iconbtn);
+  border: 0; background: transparent; cursor: pointer;
+  border-radius: var(--shape-full);
+  color: var(--md-on-surface-variant);
+}
+.iconbtn--sm { width: var(--touch-min); height: var(--touch-min); }
+.iconbtn:hover { background: var(--md-surface-container-high); }
+
+/* 未读角标：M3 Badge，容器色 = colorScheme.error */
+.badge {
+  position: absolute;
+  top: 8px; right: 8px;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  border-radius: var(--shape-full);
+  background: var(--md-error);
+  color: var(--md-on-error);
+  font: var(--w-medium) var(--label-s) / 16px var(--font);
+  text-align: center;
+}
+
+/* ⚠️⚠️ 顶栏右侧的「地址 + 在线」块会**盖到左边的图标按钮上**（2026-09-29 真机反馈
+   "太挤了，都互相覆盖了"）。根因不是间距，是**溢出**：两条文字都是 `white-space:nowrap`
+   且既没有 `overflow:hidden` 也没有省略号，父级 `min-width:0` 只让它"可以被压窄"，
+   压窄之后文字并不会收敛 —— 而是**原地溢出去**，直接压在铃铛/搜索图标上。
+   三件事一起做才对：① 块自己 `overflow:hidden`（裁掉，不许外溢）；
+   ② 两条文字 `display:block` + `max-width:100%`（`:text-overflow` 只对块级生效，
+   inline 的 span 加了也没用）；③ 允许收缩 `flex:0 1 auto`。 */
+.topbar__status {
+  display: flex; flex-direction: column; align-items: flex-end;
+  min-width: 0; flex: 0 1 auto; overflow: hidden;
+}
+.topbar__addr {
+  display: block; max-width: 100%;
+  font: var(--w-medium) var(--label-m) / var(--label-m-lh) var(--font-mono);
+  letter-spacing: 0;
+  color: var(--md-on-surface-variant);
+  white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.topbar__online {
+  display: block; max-width: 100%;
+  font: var(--w-medium) var(--label-s) / var(--label-s-lh) var(--font);
+  letter-spacing: var(--label-s-ls);
+  color: var(--md-on-surface-variant);
+  white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ============================================================
+   3. 导航：底部 NavigationBar（紧凑） / NavigationRail（平板起）
+   同一份 DOM、两种排布 —— 5 个目的地在任何一档都不出现两套导航
+   ============================================================ */
+.nav { background: var(--md-surface-container); }
+
+/* --- 底部栏：M3 NavigationBar，80dp --- */
+.app__bar {
+  min-height: var(--navbar-h);
+  /* 手势条的让位**只由原生容器做一次**（MainActivity 给 WebView 的 padding）。
+     这里曾经还有一条 `padding-bottom: env(safe-area-inset-bottom, 0)`：真机上
+     那个 env 读出来是 0（自签部署的 WebView 不上报），等于没写；而一旦哪个
+     版本开始上报，它就会和原生那份叠成双倍内边距。单一是可靠性的一部分。 */
+}
+.app__bar .navitem { flex: 1; }
+
+/* --- 侧边导轨：M3 NavigationRail，80dp / 展开 232dp --- */
+.app__rail {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s1);
+  padding: var(--s3) var(--s2);
+}
+
+.navitem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s1);
+  min-height: var(--touch-min);
+  padding: 0;
+  border: 0; background: transparent; cursor: pointer;
+  color: var(--md-on-surface-variant);
+  font-family: var(--font);
+}
+.navitem__ind {
+  display: grid; place-items: center;
+  width: 64px; height: 32px;
+  border-radius: var(--shape-l);
+  background: transparent;
+  transition: background-color var(--motion-fast) var(--ease);
+}
+.navitem__label {
+  font: var(--w-medium) var(--label-m) / var(--label-m-lh) var(--font);
+  letter-spacing: var(--label-m-ls);
+  white-space: nowrap;
+}
+.navitem.is-on { color: var(--md-on-surface); }
+.navitem.is-on .navitem__ind { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+.navitem:hover .navitem__ind { background: var(--md-surface-container-high); }
+.navitem.is-on:hover .navitem__ind { background: var(--md-secondary-container); }
+.navitem svg { width: 24px; height: 24px; display: block; fill: none; stroke: currentColor; }
+
+/* 导轨档：item 更紧凑，指示器 56×32 */
+.app__rail .navitem { min-height: 56px; padding: 6px 0; }
+.app__rail .navitem__ind { width: 56px; }
+
+/* 导轨底部品牌块：钉在导轨底部，填掉左侧下方大段空白。
+   默认隐藏 —— 折叠式导轨（80dp）放不下；只有展开式（232dp）才显示。 */
+.rail__brand { display: none; }
+@container app (min-width: 840px) and (orientation: landscape) {
+  .rail__brand {
+    display: block;
+    padding: var(--s3) var(--s2) var(--s5);
+    text-align: center;
+  }
+  .rail__brand b {
+    display: block;
+    font: var(--w-semi) var(--title-s) / var(--title-s-lh) var(--font);
+    letter-spacing: var(--title-s-ls);
+    color: var(--md-primary);
+  }
+  .rail__brand span {
+    font: var(--w-medium) var(--label-s) / var(--label-s-lh) var(--font);
+    letter-spacing: var(--label-s-ls);
+    color: var(--md-on-surface-variant);
+  }
+}
+
+/* ============================================================
+   4. 内容区与屏幕
+   ============================================================ */
+/* ⚠️⚠️ 内容区**自己不许滚**，滚动必须交给 .pane。
+   `#detail`（抽屉）是 .app__content 的 absolute 子元素，而 .app__content 是
+   `position: relative` —— 它就是这个抽屉的**包含块**。包含块一旦是滚动容器，
+   绝对定位的子元素会跟着内容一起滚：用户在好友页点开好友、向下滑列表，
+   弹出的详情就整体往上走，滑到底时详情被推出屏外。
+   分工：外层只负责定位（overflow:hidden），滚动交给 .pane。 */
+.app__content { display: block; overflow: hidden; }
+.pane { min-height: 0; height: 100%; overflow: auto; }
+.page { padding: 8px var(--gutter); }
+.page[hidden] { display: none; }
+.page__stack { display: flex; flex-direction: column; gap: var(--s2); }
+
+/* ============================================================
+   5. 搜索框：M3 OutlinedTextField（56dp / 4dp 圆角 / 1dp outline）
+   ============================================================ */
+.field {
+  display: flex; align-items: center;
+  height: var(--field-h);
+  padding: 0 var(--s4);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--shape-xs);
+  background: transparent;
+  color: var(--md-on-surface-variant);
+  gap: var(--s3);
+}
+.field input {
+  flex: 1; min-width: 0;
+  border: 0; outline: 0; background: transparent;
+  font: var(--w-normal) var(--body-l) / var(--body-l-lh) var(--font);
+  color: var(--md-on-surface);
+}
+.field input::placeholder { color: var(--md-on-surface-variant); }
+.field svg { width: 20px; height: 20px; flex: none; color: var(--md-on-surface-variant); }
+.fieldrow { display: flex; align-items: center; gap: var(--s2); }
+
+/* ============================================================
+   6. Chip：M3 FilterChip（未选中 = 1dp outline，选中 = 次级容器色）
+   形状 8dp、高 32dp —— 与真机截图的角点剖面一致
+   ============================================================ */
+.chipstrip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 0;
+}
+.chipstrip::-webkit-scrollbar { display: none; }
+
+.chip {
+  flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  height: var(--chip-h);
+  padding: 0 var(--s4);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--shape-s);
+  background: transparent;
+  color: var(--md-on-surface);
+  font: var(--w-medium) var(--label-l) / var(--label-l-lh) var(--font);
+  letter-spacing: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip.is-on {
+  border-color: transparent;
+  background: var(--md-secondary-container);
+  color: var(--md-on-secondary-container);
+}
+.chip:hover:not(.is-on) { background: var(--md-surface-container-high); }
+
+/* 「更多资料」里的徽章 chip：只读，不是按钮 —— cursor 不能是 pointer，
+   否则又是一个"看着能点、点了没反应"的假控件。 */
+.chip--tag { cursor: default; gap: 6px; }
+.chip--tag:hover { background: transparent; }
+.chip img { width: 16px; height: 16px; border-radius: 4px; object-fit: cover; flex: none; }
+
+.controls { display: flex; flex-direction: column; gap: 6px; padding: var(--s1) 0 var(--s3); }
+
+/* ============================================================
+   7. 动态卡 FeedCard
+   填充 Card：12dp 圆角 / surfaceContainerHighest / 无描边无阴影
+   ============================================================ */
+.stack { display: flex; flex-direction: column; gap: var(--s2); }
+
+.card {
+  display: block;
+  width: 100%;
+  padding: var(--s3);
+  border: 0;
+  border-radius: var(--shape-m);
+  background: var(--md-surface-container-highest);
+  color: inherit;
+  font-family: var(--font);
+  text-align: left;
+  cursor: pointer;
+}
+.card:hover { background: var(--md-surface-container-high); }
+/* 浅底 Card：统计格 / 聚集地 / 资料卡（CardDefaults containerColor = surfaceContainerLow） */
+.card--low { background: var(--md-surface-container-low); }
+.card--low:hover { background: var(--md-surface-container); }
+.card--static { cursor: default; }
+
+.feedrow { display: flex; align-items: flex-start; gap: 10px; }
+.feedrow__body { flex: 1; min-width: 0; }
+
+.rowline { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.name {
+  font: var(--w-semi) var(--title-s) / var(--title-s-lh) var(--font);
+  letter-spacing: var(--title-s-ls);
+  color: var(--md-on-surface);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.name--m { font: var(--w-semi) var(--title-m) / var(--title-m-lh) var(--font); }
+.name--l {
+  font: var(--w-semi) var(--title-l) / var(--title-l-lh) var(--font);
+  letter-spacing: var(--title-l-ls);
+}
+
+/* 类型标签：labelSmall + primary —— 真机截图里「下线 / 上线 / 状态」就是这个蓝 */
+.kind {
+  flex: none;
+  font: var(--w-medium) var(--label-s) / var(--label-s-lh) var(--font);
+  letter-spacing: var(--label-s-ls);
+  color: var(--md-primary);
+}
+.body {
+  margin-top: var(--s1);
+  font: var(--w-normal) var(--body-m) / var(--body-m-lh) var(--font);
+  color: var(--md-on-surface-variant);
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.time {
+  margin-top: var(--s1);
+  font: var(--w-medium) var(--label-s) / var(--label-s-lh) var(--font);
+  letter-spacing: var(--label-s-ls);
+  color: var(--md-on-surface-variant);
+}
+
+/* ============================================================
+   8. 好友行 FriendRow（头像右下角带在线点）
+   ============================================================ */
+.friendrow { display: flex; align-items: center; gap: 10px; padding: 10px; }
+.dotwrap { position: relative; flex: none; }
+/* VRChat 的状态点是**两个维度**编码的：颜色 = status（五档），实心/空心 = 在不在实例里。
+   实心 = 真在游戏实例内（location 指得出来）；空心 = 只在网页/APP 上线，
+   即桌面版 `border-<状态色> bg-background`（friendsSidebarModel.ts:227-239）。
+   平板版以前只有 online/active/其它三档且全实心，join me / ask me / busy 全被并成一档，
+   所以会显得"一部分人的灯没规律地不一样"。 */
+.dot {
+  position: absolute;
+  right: -1px; bottom: -1px;
+  width: 12px; height: 12px;
+  border-radius: var(--shape-full);
+  border: 2px solid var(--md-surface-container-highest);   /* 挖空圈，让它不糊在头像上 */
+  background: var(--presence-offline);
+  box-sizing: border-box;
+}
+.dot--online  { background: var(--presence-online); }
+.dot--joinme  { background: var(--presence-joinme); }
+.dot--askme   { background: var(--presence-askme); }
+.dot--busy    { background: var(--presence-busy); }
+.dot--offline { background: var(--presence-offline); }
+/* 空心：仍在但在网页端——外圈状态色，里填背景色 */
+.dot--hollow {
+  background: var(--md-surface-container-highest);
+  border-width: 2px;
+  border-style: solid;
+}
+.dot--hollow.dot--online  { border-color: var(--presence-online); }
+.dot--hollow.dot--joinme  { border-color: var(--presence-joinme); }
+.dot--hollow.dot--askme   { border-color: var(--presence-askme); }
+.dot--hollow.dot--busy    { border-color: var(--presence-busy); }
+.roomhead {
+  padding: 4px 0 2px;
+  font: var(--w-medium) var(--label-m) / var(--label-m-lh) var(--font);
+  letter-spacing: var(--label-m-ls);
+  color: var(--md-primary);
+}
+.plat {
+  flex: none;
+  font: var(--w-medium) var(--label-s) / var(--label-s-lh) var(--font);
+  letter-spacing: var(--label-s-ls);
+  color: var(--md-on-surface-variant);
+}
+
+/* ============================================================
+   9. 主页：分区标题 / 统计格 / 聚集地卡 / 世界卡
+   ============================================================ */
+.sectionhead { display: flex; align-items: center; gap: var(--s2); padding: 6px 0 2px; }
+.sectionhead h2 {
+  margin: 0;
+  font: var(--w-semi) var(--title-m) / var(--title-m-lh) var(--font);
+  letter-spacing: var(--title-m-ls);
+  color: var(--md-on-surface);
+}
+.sectionhead span {
+  font: var(--w-medium) var(--label-m) / var(--label-m-lh) var(--font);
+  letter-spacing: var(--label-m-ls);
+  color: var(--md-on-surface-variant);
+}
+
+/* 统计格：数字 = headlineSmall + primary，标签 = labelMedium */
+.statgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+.stat { padding: 12px 14px; }
+.stat b {
+  display: block;
+  font: var(--w-semi) var(--headline-s) / var(--headline-s-lh) var(--font);
+  letter-spacing: var(--headline-s-ls);
+  color: var(--md-primary);
+}
+.stat span {
+  font: var(--w-medium) var(--label-m) / var(--label-m-lh) var(--font);
+  letter-spacing: var(--label-m-ls);
+  color: var(--md-on-surface-variant);
+}
+
+/* 横向条：聚集地 / 猜你想去 / 最近浏览 */
+.strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 260px;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 2px 0;
+  scrollbar-width: none;
+}
+.strip::-webkit-scrollbar { display: none; }
+
+.worldcard { display: flex; align-items: center; gap: var(--s3); padding: 10px; }
+.worldcard__thumb {
+  flex: none;
+  width: 56px; height: 56px;
+  border-radius: var(--shape-s);
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  display: grid; place-items: center;
+  font: var(--w-medium) var(--label-s) / var(--label-s-lh) var(--font);
+  letter-spacing: var(--label-s-ls);
+  text-align: center;
+  overflow: hidden;
+}
+.worldcard__name {
+  font: var(--w-medium) var(--body-l) / var(--body-l-lh) var(--font);
+  color: var(--md-on-surface);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.worldcard__meta {
+  font: var(--w-medium) var(--label-m) / var(--label-m-lh) var(--font);
+  letter-spacing: var(--label-m-ls);
+  color: var(--md-on-surface-variant);
+  /* 窄卡里「3 位好友 · 好友可见」会被折成两行把卡撑高 —— 单行截断更整齐 */
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.worldcard__body { flex: 1; min-width: 0; }
+.avstack { display: flex; flex: none; }
+.avstack .avatar { border: 2px solid var(--md-surface-container-low); }
+.avstack .avatar + .avatar { margin-left: -6px; }
+
+.more {
+  width: 100%;
+  min-height: var(--touch-min);
+  border: 0; background: transparent; cursor: pointer;
+  border-radius: var(--shape-s);
+  color: var(--md-primary);
+  font: var(--w-medium) var(--label-l) / var(--label-l-lh) var(--font);
+}
+.more:hover { background: var(--md-surface-container-high); }
+
+/* ============================================================
+   10. 收藏：类型 chip + 分组网格
+   ============================================================ */
+.favgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+.favcell { padding: 10px; }
+.favcell .worldcard__thumb { width: 100%; height: 84px; }
+.favcell .worldcard__name { margin-top: var(--s2); font-size: var(--body-m); }
+/* 0.2.31-t4：收藏格内的小动作（移除）与已满禁用态；组头编辑按钮同 chip 语法。 */
+.favcell .chip { margin-top: var(--s2); align-self: flex-start; }
+.favcell[disabled] { opacity: 0.55; }
+.favcell[disabled] .worldcard__name { color: var(--md-on-surface-variant); }
+.grouphead .chip { font-size: var(--label-s); padding: 2px 10px; }
+.grouphead {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0 4px;
+  font: var(--w-medium) var(--label-m) / var(--label-m-lh) var(--font);
+  letter-spacing: var(--label-m-ls);
+  color: var(--md-primary);
+}
+
+/* ============================================================
+   11. 个人页：资料卡 + 键值行 + 设置行
+   ============================================================ */
+.me { padding: var(--s4); }
+
+/* 未登录时的「个人」页：只留一句实话。
+   键值行（当前模型 / 主页世界 / 人称代词 / 状态文字 / 信任等级）全是账号数据，
+   没有账号就不该有值 —— 摆着就是在编造"我的资料"。 */
+.me.is-anon .kv { display: none; }
+.me.is-anon .me__head { align-items: flex-start; }
+.me.is-anon .avatar { color: var(--md-on-surface-variant); background: var(--md-surface-container-high); }
+
+/* ⚠️ 必须显式写一遍：`[hidden]` 的 UA 样式是 `display:none`，会被下面这些
+   **同权重更高的作者规则**盖掉（`.sectionhead{display:flex}` / `.favgrid{display:grid}`），
+   `.page[hidden]` 当年踩的就是同一个坑。 */
+.sectionhead[hidden],
+.favgrid[hidden] { display: none; }
+
+.me__head { display: flex; align-items: center; gap: var(--s4); }
+.me__status {
+  font: var(--w-normal) var(--body-m) / var(--body-m-lh) var(--font);
+  color: var(--md-primary);
+}
+.me__user {
+  font: var(--w-normal) var(--body-s) / var(--body-s-lh) var(--font);
+  letter-spacing: var(--body-s-ls);
+  color: var(--md-on-surface-variant);
+}
+.kv { display: flex; padding: 8px 0; align-items: center; gap: var(--s2); }
+.kv__k {
+  width: 76px; flex: none;
+  font: var(--w-normal) var(--body-s) / var(--body-s-lh) var(--font);
+  letter-spacing: var(--body-s-ls);
+  color: var(--md-on-surface-variant);
+}
+.kv__v { font: var(--w-normal) var(--body-m) / var(--body-m-lh) var(--font); min-width: 0; flex: 1; }
+.kv__v--link { color: var(--md-primary); }
+
+.chev { flex: none; width: 20px; height: 20px; color: var(--md-on-surface-variant); fill: none; stroke: currentColor; }
+.hr { height: 1px; border: 0; background: var(--md-outline-variant); margin: var(--s3) 0; }
+
+/* 信任标签：pill + secondaryContainer（UserProfileSheet 里的 trustChips） */
+.trust {
+  display: inline-flex; align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--shape-full);
+  background: var(--md-secondary-container);
+  color: var(--md-on-secondary-container);
+  font: var(--w-medium) var(--label-s) / var(--label-s-lh) var(--font);
+  letter-spacing: var(--label-s-ls);
+}
+.trust[hidden] { display: none; }
+.trust--friend {
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+}
+
+/* 按钮：M3 OutlinedButton（全圆角）+ FilledButton */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--s6);
+  border-radius: var(--shape-full);
+  border: 1px solid var(--md-outline);
+  background: transparent;
+  color: var(--md-primary);
+  font: var(--w-medium) var(--label-l) / var(--label-l-lh) var(--font);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font);
+}
+.btn:hover { background: color-mix(in srgb, var(--md-primary) 8%, transparent); }
+.btn--filled { background: var(--md-primary); color: var(--md-on-primary); border-color: transparent; }
+.btn--filled:hover { background: #0047b4; }
+/* 深色主题下 primary 翻转成浅蓝，原 #0047b4 那种"更深的蓝"在深色上几乎看不见 */
+html[data-theme="dark"] .btn--filled:hover,
+:root[data-theme="dark"] .btn--filled:hover { background: #5b8bff; }
+
+/* ============================================================
+   深色主题：卡片底 / 卡片描边（2026-09-30 真机实测补）
+   ------------------------------------------------------------
+   ⚠️⚠️ 这两条**必须写在 .app 上**，不能只靠 tokens.css 的 :root 深色块！
+   宽屏 @container 查询把浅色 --md-pane / --md-card-line 直接**声明在 .app 元素**，
+   而自定义属性是"元素自有声明恒胜继承值"—— 继承来的 :root 深色值特异性再高
+   也翻不动它（实测症状：深色下整屏黑，唯独卡片仍是白底 + 亮字，不可读）。
+   放在 @container 外面（全宽度生效）没关系：窄屏本来没人消费 --md-pane。 */
+html[data-theme="dark"] .app {
+  --md-pane: #1e1f26;
+  --md-card-line: rgba(227, 225, 233, 0.10);
+}
+/* 跟随系统 + OS 深色（未显式选浅色时） */
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .app {
+    --md-pane: #1e1f26;
+    --md-card-line: rgba(227, 225, 233, 0.10);
+  }
+}
+
+/* 禁用态：M3 规范 —— 描边 = onSurface 12%，文字 = onSurface 38%，且**没有**任何按压反馈。
+   ⚠️⚠️ 2026-09-29 补：此前**全项目一条 :disabled 样式都没有**（`grep disabled styles/` 空），
+   于是"被禁用的按钮"和"可用的按钮"在屏幕上一模一样。实测轨迹：
+   用户在连接页点「加入」零反应 → 看着像 App 坏了，真因只是 `labelOk` 为假
+   （「平板」是 placeholder，输入框其实是空的）→ `claimGo.disabled = true`。
+   全项目共 6 处 `el.x.disabled = …`（连接 / 加入 / 登录 / 详情保存 / 详情取消），
+   全都有这个问题。两个修法只能二选一：要么禁用**看得见**（这里），
+   要么不禁用、改成点了给出原因。视觉上必须能区分，否则等于把 bug 藏起来。 */
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  color: var(--md-on-surface-a38);
+  border-color: var(--md-on-surface-a12);
+  cursor: not-allowed;
+}
+.btn--filled:disabled,
+.btn--filled[aria-disabled="true"] {
+  background: var(--md-on-surface-a12);
+  color: var(--md-on-surface-a38);
+  border-color: transparent;
+}
+/* 挪到 hover 规则**之后**才能盖住它（两者特指度相同，靠先后定胜负） */
+.btn:disabled:hover,
+.btn[aria-disabled="true"]:hover { background: transparent; }
+.btn--filled:disabled:hover,
+.btn--filled[aria-disabled="true"]:hover { background: var(--md-on-surface-a12); }
+.btnrow { display: flex; gap: var(--s2); }
+.btnrow .btn { flex: 1; padding: 0 var(--s2); }
+
+/* ============================================================
+   12. 详情 —— 一份 DOM，两种形态
+   单栏档（紧凑 / 平板竖）：M3 ModalBottomSheet（28dp 顶角、scrim 32%）
+                            大屏上限宽 640dp 居中，不拉满
+   双栏档（平板横 / 大屏）：常驻右栏，不再吃满屏
+   ============================================================ */
+.detail {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  max-height: 92%;
+  display: flex;
+  flex-direction: column;
+  background: var(--md-surface-container-low);
+  border-radius: var(--shape-xl) var(--shape-xl) 0 0;
+  box-shadow: var(--elev-2);
+  transform: translateY(101%);
+  z-index: 9;
+  overflow: hidden;
+}
+/* 抽屉的滑动过渡**等首帧之后再开**（main.js 给 <html> 加 .ready）：
+   容器查询在首帧就要把 transform 从 translateY(101%) 换成 translate(-50%,101%)
+   / none，此时若 transition 已存在，计算值会被冻在过渡起点 ——
+   出图会拿到「抽屉还在屏幕外」的位置，断言也会被它骗过去。 */
+html.ready .detail { transition: transform var(--motion-std) var(--ease); }
+.app.detail-open .detail { transform: none; }
+
+.detail__handle {
+  width: 32px; height: 4px; flex: none;
+  margin: var(--s3) auto var(--s2);
+  border-radius: var(--shape-full);
+  background: var(--md-outline-variant);
+}
+.detail__close { position: absolute; right: var(--s3); top: var(--s3); z-index: 2; }
+.detail__body { overflow: auto; padding: 0 var(--s5) var(--s7); }
+
+.detail__head { display: flex; align-items: center; gap: 14px; }
+.detail__title { min-width: 0; }
+.detail__presence {
+  font: var(--w-normal) var(--body-s) / var(--body-s-lh) var(--font);
+  letter-spacing: var(--body-s-ls);
+  color: var(--md-on-surface-variant);
+}
+.detail__section { margin-top: 14px; }
+.detail__label {
+  margin-bottom: 2px;
+  font: var(--w-medium) var(--label-m) / var(--label-m-lh) var(--font);
+  letter-spacing: var(--label-m-ls);
+  color: var(--md-primary);
+}
+.detail__text { font: var(--w-normal) var(--body-m) / var(--body-m-lh) var(--font); }
+.detail__text--link { color: var(--md-primary); }
+.trustrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s3); }
+
+/* 抽屉遮罩 */
+.scrim {
+  position: absolute; inset: 0;
+  background: var(--md-scrim);
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--motion-std) var(--ease);
+  z-index: 8;
+}
+.app.detail-open .scrim { opacity: 1; pointer-events: auto; }
+
+/* ============================================================
+   13. 容器查询四档
+   ============================================================ */
+
+/* —— 紧凑 < 600：底部 5 Tab（就是手机 App 现在的样子） —— */
+@container app (max-width: 599px) {
+  .favgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* —— 平板竖屏 600–839：移到左侧 NavigationRail，内容仍单栏 —— */
+@container app (min-width: 600px) {
+  .app { --rail-w: 80px; grid-template-columns: 80px minmax(0, 1fr); }
+  .app__rail { display: flex; }
+  .app__bar { display: none; }              /* 导航只有一套：底部栏退场 */
+  .fieldrow { max-width: 560px; }
+  .strip { grid-auto-columns: 320px; }          /* 宽了就把横滑卡也放长，别截标题 */
+  .favgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .statgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .page { padding: var(--s3) var(--s4); }
+
+  /* 单栏档的抽屉：M3 规范里 ModalBottomSheet 在大屏上**限宽居中**，不拉满。
+     注意居中的是「窗口」不是内容区 —— 抽屉的包含块是 .app__content（已被导轨
+     让开 rail 宽），所以要再往回挪半个导轨，否则整体偏右 40px。 */
+  .detail {
+    left: 50%; right: auto;
+    width: min(640px, 92%);
+    transform: translate(calc(-50% - var(--rail-w) / 2), 101%);
+  }
+  .app.detail-open .detail { transform: translate(calc(-50% - var(--rail-w) / 2), 0); }
+}
+
+/* —— 平板横屏 840 + 横屏：导轨 + 主从双栏（列表 / 详情同屏） —— */
+@container app (min-width: 840px) and (orientation: landscape) {
+  /* 展开式导轨：图标 + 文字并排 */
+  .app {
+    --rail-w: 232px;
+    grid-template-columns: 232px minmax(0, 1fr);
+
+    /* ============================================================
+       ★ 宽屏视觉层（只在大屏生效，手机档一个像素都不动）
+       ------------------------------------------------------------
+       手机档那套尺寸是按 360~430dp 定的，照搬到 1097px 宽的横屏上会"塌"：
+         · 卡片填充 #F3F2FA 与页面底 #FAF8FF 只差 **7/255** —— 肉眼辨不出卡片，
+           文字看起来是直接浮在灰面上；
+         · 内容左右只有 **16px** 留白，卡片/文字像"顶着"导轨和分界线；
+         · 卡片间距 8px、顶栏与内容同色无分隔 → 一片糊。
+       （2026-09-29 用户反馈："UI 太丑了""文字直接顶着分界线，一点间隔都没有"。）
+       这里重定一版大屏视觉：底色压暗 → 卡片纯白 + 描边 + 轻阴影 → 留白放大。
+       语义色（primary / presence / error）不动，与手机端仍是同一套。 */
+    --md-pane: #ffffff;                         /* 卡片 / 面板 */
+    --md-card-line: rgba(24, 27, 37, 0.08);     /* 描边：比 outline-variant 淡，只做轮廓 */
+    --gutter: var(--s5);                        /* 内容左右留白 12 → 20 */
+    --list-w: 400px;                            /* 列表列 360 → 400：动态页那 5 颗
+                                                   chip 需要 ≈364px 才放得下一行，
+                                                   360 会让第 5 颗被裁成半个字。 */
+  }
+
+  /* 页面底色不再在这里写死：原 `html:not(.brand) .app { --md-surface:#f2f4fa }`
+     特异性 0,2,1，会反过来吃掉 :root[data-theme="dark"] 的深色 token（2026-09-30 改）。
+     现在 surface 完全由 tokens.css 的 :root / 深色块控制，深色主题才能真正生效。
+     非 brand 的浅色表现由 :root 默认值承担，与 brand 主题互不干扰。 */
+
+  /* 导轨项在整高内均匀分布，填掉「5 个导航项只占顶部、下方一大段空白」 */
+  .app__rail { justify-content: space-evenly; }
+
+  .app__rail .navitem {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--s3);
+    min-height: 56px;
+    padding: 4px var(--s2);
+  }
+
+  /* 主从只在列表页成立（.is-wide = 主页/收藏/个人这类面板页）：
+     面板页整块宽度给内容，详情列退场 —— 否则统计格会被挤进 360px 的列表列 */
+  .app__content:not(.is-wide) {
+    display: grid;
+    grid-template-columns: minmax(0, var(--list-w)) minmax(0, 1fr);
+    overflow: hidden;
+  }
+  .app__content:not(.is-wide) .pane { overflow: auto; }
+  .app__content:not(.is-wide) .pane--main { border-right: 1px solid var(--md-outline-variant); }
+  .app__content.is-wide .detail,
+  .app__content.is-wide .splitter { display: none; }
+
+  /* 详情列占位与 #detail **叠在同一格**（第 2 列 / 第 1 行）。
+     占位块是「详情列的空状态」，已从 <aside id="detail"> 里搬出来成为
+     .app__content 的直接子级 —— 它原本住在 #detail 内部，而 #detail 在
+     「没选中好友」时被 hidden 打上 display:none，于是该露出它的那一刻
+     正好连祖先一起被藏掉，谁也没见过它（0.2.26 实测可见像素 = 0）。
+     现在两者共用第 2 列，靠 .app.detail-open 在它们之间切换。 */
+  .app__content:not(.is-wide) .detail,
+  .app__content:not(.is-wide) #detailPlaceholder { grid-column: 2; grid-row: 1; }
+
+  /* 详情常驻右栏，不再吃满屏抽屉 */
+  .detail {
+    position: static;
+    width: auto;
+    max-height: none;
+    display: block;
+    overflow: auto;
+    transform: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--md-surface);
+  }
+  .detail__handle, .detail__close { display: none; }
+  /* ⚠️ 这里原来是 `padding: 0` —— 于是右栏内容左右**完全贴边**：点开一位好友，
+     名字与正文紧顶着中间的分界线（2026-09-29 用户反馈"文字直接顶着分界线，
+     一点间隔都没有"）。右栏必须有与左栏同级的留白。 */
+  .detail__body { padding: var(--s5) var(--s5) var(--s6); }
+  .app.detail-open .scrim { opacity: 0; pointer-events: none; }
+  /* ⚠️ 必须显式打掉 600+ 档那条底部抽屉的居中位移：
+     `.app.detail-open .detail { transform: translate(calc(-50% - var(--rail-w)/2), 0) }`
+     特异度是 (0,3,0)，比上面 `.detail { transform: none }` 的 (0,1,0) 高 —— 不覆盖的话，
+     双栏右栏里的 #detail 会被那条位移整体左移 50%+116px（实测 offsetLeft=360 却渲染在
+     x=227，正好压住左侧列表）。用**同特异度、更靠后**的一条把它顶回来。
+     曾长期不显形：旧代码 floatDetail() 把 #detail 挪出了 .app，这条选择器匹配不到它。 */
+  .app.detail-open .detail { transform: none; }
+
+  /* 双栏时列表窄了，卡内间距收紧（App 的 12dp 保持不变，只把头像列再压一点） */
+  .worldcard__thumb { width: 48px; height: 48px; }
+
+  /* ============================================================
+     ★ 宽屏视觉层 · 落地规则（配合上面 .app 里的令牌覆盖）
+     ============================================================ */
+
+  /* 留白：页面 8/12 → 16/20，卡片间距 8 → 12，卡内 12 → 16。
+     大屏上"呼吸感"靠留白，不靠把卡片做大。 */
+  .page { padding: var(--s4) var(--gutter) var(--s6); }
+  .stack { gap: var(--s3); }
+  .page__stack { gap: var(--s3); }
+  .controls { gap: var(--s2); padding: var(--s2) 0 var(--s4); }
+  .card { padding: var(--s4); }
+
+  /* 卡片：填充色 → 白底 + 1px 淡描边 + 极轻阴影。
+     原先靠"填充色差"表达层级，在浅紫底上只剩 7/255 → 现在改用**描边+阴影**，
+     这对任何底色都成立，也不再依赖色差。hover 只加深阴影，不换底色
+     （换底色会让整片列表在鼠标划过时"闪"）。 */
+  .card {
+    background: var(--md-pane);
+    box-shadow: inset 0 0 0 1px var(--md-card-line),
+                0 1px 2px rgba(24, 27, 37, 0.04);
+    transition: box-shadow var(--motion-fast) var(--ease);
+  }
+  .card:hover {
+    background: var(--md-pane);
+    box-shadow: inset 0 0 0 1px var(--md-card-line),
+                0 3px 10px rgba(24, 27, 37, 0.09);
+  }
+  .card--low, .card--low:hover { background: var(--md-pane); }
+  .card--static, .card--static:hover {
+    box-shadow: inset 0 0 0 1px var(--md-card-line),
+                0 1px 2px rgba(24, 27, 37, 0.04);
+    cursor: default;
+  }
+
+  /* 导轨：与内容之间给一条实线。原来两片同色底直接相接，
+     导轨的"底"和内容的"底"分不清，整块像一张没分栏的纸。 */
+  .app__rail {
+    background: #e6ebf6;
+    border-right: 1px solid rgba(24, 27, 37, 0.07);
+  }
+  /* 深色主题：导轨底色随 surface 翻成近黑，描边换成浅色 */
+  html[data-theme="dark"] .app__rail,
+  :root[data-theme="dark"] .app__rail {
+    background: #181a20;
+    border-right: 1px solid rgba(227, 225, 233, 0.08);
+  }
+
+  /* 顶栏：落一条底线。否则顶栏与内容同色，滚动时内容像"从天上掉下来"。
+     同时把左右留白对齐内容区的 gutter，右端的地址/在线数不再贴屏幕边。 */
+  .topbar {
+    padding: var(--s2) var(--s5);
+    border-bottom: 1px solid var(--md-card-line);
+  }
+
+  /* 列表/详情之间那条竖线：保留，但换成更淡的一档，
+     真正把两侧分开的是留白（列表 20px、详情 20px），不是那根线。 */
+  .app__content:not(.is-wide) .pane--main {
+    border-right-color: var(--md-card-line);
+  }
+
+  /* 大屏专用的几处"手机尺寸"回调：输入框 4px 圆角在大屏上像没切角，
+     动态行头像 32px 相对行高偏小。 */
+  .field { border-radius: var(--shape-s); }
+  .feedrow .avatar { width: 40px; height: 40px; }
+  .feedrow { gap: var(--s3); }
+
+  /* chip 行：手机档靠横向滚动（一屏只放得下 2~3 颗，滚是合理的）。
+     大屏明明有空间却还在裁 —— 真机上第 5 颗「模型」被切成半个字，
+     看起来像界面坏了。大屏直接换行。 */
+  .chipstrip { flex-wrap: wrap; overflow-x: visible; }
+
+  /* 滚动条：WebView 默认那条是轨道 + 实心灰块的方角条，跟白卡放一起最扎眼。
+     做成"胶囊 + 内缩 3px"的细条（border 透明 + background-clip 是让它细下来的
+     标准做法），hover 才加深。 */
+  .pane::-webkit-scrollbar { width: 12px; height: 12px; }
+  .pane::-webkit-scrollbar-track { background: transparent; }
+  .pane::-webkit-scrollbar-thumb {
+    background: rgba(24, 27, 37, 0.16);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: var(--shape-full);
+  }
+  .pane::-webkit-scrollbar-thumb:hover {
+    background: rgba(24, 27, 37, 0.30);
+    background-clip: content-box;
+  }
+
+  /* 导轨 / 顶栏 / 导航标签：手机档的 11~12px 在 1097px 宽下偏小，
+     整体提一档。只动大屏，手机档字阶仍是 Theme.kt 原值。 */
+  .navitem__label { font-size: 13px; }
+  .topbar__addr { font-size: 13px; }
+  .topbar__online { font-size: 12px; }
+
+  /* 详情列占位（未选中好友时占着 505px 宽）：原来只有一坨居中文字，
+     周围全空，看起来像"界面塌了"。这里给它两个锚点：
+     ① 图标加一圈柔光晕；② 三个统计数字各自成为一张小白卡 —— 于是
+     空状态也有形状，和右边的白卡语言一致。 */
+  .detail__placeholder-icon {
+    width: 88px; height: 88px;
+    box-shadow: 0 0 0 10px rgba(0, 84, 214, 0.055);
+  }
+  .detail__ph-stats .stat {
+    background: var(--md-pane);
+    border-radius: var(--shape-m);
+    box-shadow: inset 0 0 0 1px var(--md-card-line),
+                0 1px 2px rgba(24, 27, 37, 0.04);
+    padding: var(--s4) var(--s2);
+  }
+
+  /* 「查看全部」：手机档是占满整行的裸文字按钮（窄屏上"整行可点"是优点）。
+     大屏下它悬在 865px 宽内容区的正中间，像一行没归属的蓝字。
+     收成居中 pill，顺带把误触面积从"整行"降回内容宽。 */
+  .more {
+    width: auto;
+    align-self: center;
+    min-width: 168px;
+    padding: 0 var(--s5);
+    border-radius: var(--shape-full);
+    background: var(--md-pane);
+    box-shadow: inset 0 0 0 1px var(--md-card-line);
+  }
+  .more:hover { background: var(--md-surface-container-low); }
+}
+
+/* —— 大屏 ≥ 1240：网格列数继续加 —— */
+@container app (min-width: 1240px) {
+  .statgrid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .favgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .strip { grid-auto-columns: 360px; }
+}
+
+/* 拖分栏手柄：只在双栏档出现 */
+.splitter { display: none; }
+
+@container app (min-width: 840px) and (orientation: landscape) {
+  .splitter {
+    display: block;
+    position: absolute;
+    top: 0; bottom: 0;
+    left: calc(var(--list-w) - 5px);   /* 相对 .app__content（已被导轨让开） */
+    width: 10px;
+    z-index: 6;
+    border: 0; background: transparent; cursor: col-resize;
+    padding: 0;
+  }
+  .splitter::after {
+    content: "";
+    position: absolute; top: 0; bottom: 0; left: 4px;
+    width: 2px;
+    background: transparent;
+    transition: background-color var(--motion-fast) var(--ease);
+  }
+  .splitter:hover::after, .splitter.is-drag::after { background: var(--md-primary); }
+}
+
+/* ============================================================
+   14. 零碎件
+   ============================================================ */
+
+/* 顶栏头像：视觉 32dp，但触控目标要够 48dp（M3 下限） */
+.mebtn {
+  flex: none;
+  display: grid; place-items: center;
+  width: var(--touch-min); height: var(--touch-min);
+  padding: 0; border: 0; background: transparent; cursor: pointer;
+  border-radius: var(--shape-full);
+}
+.mebtn:hover { background: var(--md-surface-container-high); }
+
+/* 首字母头像的调色板 —— 与 RemoteAvatar.kt 的 avatarPalette 同值。
+   App 里按名字 hash 取色（同一个人始终同色）；Demo 里直接写死档位。 */
+.av1 { background: #6c7bb8; }
+.av2 { background: #4e9a8f; }
+.av3 { background: #b07c4f; }
+.av4 { background: #9a6ba8; }
+.av5 { background: #5b8fb9; }
+.av6 { background: #a8674f; }
+.avatar { color: #fff; }
+
+/* span 写在同一层的文字节点要块级化 */
+.worldcard__name, .worldcard__meta, .stat span { display: block; }
+.worldcard__body { display: flex; flex-direction: column; }
+
+/* M3 Switch：轨道 52×32，滑块关 16 / 开 24 */
+.switch {
+  position: relative;
+  flex: none;
+  width: 52px; height: 32px;
+  border-radius: var(--shape-full);
+  background: var(--md-surface-container-highest);
+  border: 2px solid var(--md-outline);
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease),
+              border-color var(--motion-fast) var(--ease);
+}
+.switch::after {
+  content: "";
+  position: absolute; top: 50%; left: 6px;
+  width: 16px; height: 16px;
+  margin-top: -8px;
+  border-radius: var(--shape-full);
+  background: var(--md-outline);
+  transition: left var(--motion-fast) var(--ease),
+              width var(--motion-fast) var(--ease),
+              height var(--motion-fast) var(--ease),
+              margin-top var(--motion-fast) var(--ease),
+              background-color var(--motion-fast) var(--ease);
+}
+.switch.is-on { background: var(--md-primary); border-color: var(--md-primary); }
+.switch.is-on::after {
+  left: 24px;
+  width: 24px; height: 24px; margin-top: -12px;
+  background: var(--md-on-primary);
+}
+
+/* 焦点可见：全站统一 2px primary 描边 */
+.app :is(button, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--md-primary);
+  outline-offset: 2px;
+  border-radius: var(--shape-s);
+}
+
+/* ⚠️⚠️ 触摸设备上**关掉**这圈焦点环 —— 2026-09-29 真机反馈"点动态/好友这类按钮会出现
+   蓝色的小方块贴图"，就是它：描边色是 `--md-primary = #0054d6`（蓝），
+   再加 `outline-offset: 2px` 外扩 2px，于是方方正正一小块贴在按钮边上。
+   桌面浏览器里 `:focus-visible` 对指针点击是**不匹配**的（只匹配键盘 Tab），
+   但 **Android WebView 会把触摸点击也判成"应当显示焦点"** → 每点一个按钮就留一圈蓝框。
+   用 `@media (hover: none)` 把它限定到"有指针悬停能力"的设备上；
+   键盘导航（外接键盘 / 遥控器）仍然保留焦点环 —— 那是无障碍必需的，不能一刀切删掉。 */
+@media (hover: none) {
+  .app :is(button, input, [tabindex]):focus-visible { outline: none; }
+}
+
+/* WebView 自带的触摸高亮：默认在按下的元素上盖一块半透明方块（颜色随 ROM 主题，
+   ColorOS 上是蓝的），与本项目自绘的 Material 反馈重复且会露出圆角外。
+   该属性可继承，写在 html 上即全站生效。 */
+html { -webkit-tap-highlight-color: transparent; }
+
+
+/* ============================================================
+   演示数据标识
+   五屏的**样例**还在（浏览器 / 出图 / 四档布局断言走的就是它），所以这条
+   横幅保留 —— 但它现在只在**未登录**时出现：登录后 screens.js 会把五屏换成
+   真实数据并撤掉它。判定权因此是"有没有真实数据"，不是"有没有接线"。
+   ============================================================ */
+.demobar {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin: var(--s3) var(--gutter) 0;
+  padding: 8px 14px;
+  border-radius: var(--shape-s);
+  background: var(--md-surface-container-high);
+  color: var(--md-on-surface-variant);
+  font: var(--w-medium) var(--label-s) / var(--label-s-lh) var(--font);
+}
+.demobar__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--md-error);
+}
+
+/* ⚠️ 必须显式兜底：上面 `.demobar{display:flex}` 会盖掉 UA 的 `[hidden]{display:none}`，
+   于是横幅**永远**藏不掉 —— 登录后真实数据都画上屏了，"演示数据"那条还挂在那儿。
+   这是本项目第三次撞同一类（前两次是 `.gate__row` 和 `#confirm`，见 gate.css）。 */
+#demobar[hidden] { display: none; }
+
+/* ⚠️ 第四次同类坑（.gate__row / #confirm / .demobar 之后）：
+   双栏档 `.detail` 是 display:flex 常驻，会盖掉 UA 的 [hidden]{display:none} ——
+   详情面板必须只在用户点开好友后才出现，screens.js 用 hidden 属性管理它。 */
+#detail[hidden] { display: none !important; }
+
+/* ---- 真机（#device）详情抽屉：fixed 贴真视口底 ----
+   main.js 演示壳用 transform 缩放 #screen，壳内 absolute 的定位基准是
+   缩放层 .fit —— 实测（2026-09-22）抽屉打开时 bottom=1046 而视口只有 752，
+   底部 294px 内容在屏外。screens.js 接管时把 #detail 挪到 body 直下，
+   这里用 fixed 贴视口底 + M3 bottom sheet 观感（28dp 顶角 / 拖拽条 / scrim）。 */
+.detail--floating {
+  position: fixed;
+  inset: auto 0 0 0;
+  transform: none;   /* 挪出 .app 后 .app.detail-open .detail 选择器失配，显隐改由 [hidden] 全权管理 */
+  max-height: 86vh;
+  border-radius: var(--shape-xl) var(--shape-xl) 0 0;
+  box-shadow: var(--elev-3);
+  border-top: 1px solid var(--md-outline-variant);
+}
+.detail--floating .detail__body {
+  padding: 0 var(--s5) calc(var(--s7) + env(safe-area-inset-bottom, 0px));
+}
+/* 头部：长名字不许钻到关闭按钮底下；头像加一圈描边跟卡片底分开 */
+.detail--floating .detail__head {
+  padding-right: calc(var(--iconbtn) + var(--s3));
+  align-items: center;
+}
+.detail--floating .detail__head .avatar {
+  box-shadow: 0 0 0 1px var(--md-outline-variant);
+}
+.detail--floating .detail__title { padding-top: var(--s1); }
+/* 操作行：三枚等宽 M3 pill，高度 40dp */
+.detail--floating .btnrow { margin-top: var(--s4); gap: var(--s2); }
+.detail--floating .btnrow .btn { height: 40px; border-radius: var(--shape-full); }
+/* 分区与分隔线：留白统一拉开，别挤成一坨 */
+.detail--floating .detail__section { margin-top: var(--s5); }
+.detail--floating .hr { margin: var(--s5) 0 0; }
+
+
+/* ============================================================
+   空状态 / 取数失败
+   一句话说明"这里是空的"，或者"没读到、为什么"。
+   刻意跟卡片区分开：它**没有**卡片的底色与阴影，免得被当成一条内容。
+   两句话必须能分清 —— "确实没有"和"没拉到"是完全不同的两件事，
+   合成一句"暂无数据"会让人去改服务器。
+   ============================================================ */
+.emptynote {
+  margin: var(--s2) 0 0;
+  padding: 2px var(--s1);
+  color: var(--md-on-surface-variant);
+  font: var(--w-medium) var(--label-m) / var(--label-m-lh) var(--font);
+  letter-spacing: var(--label-m-ls);
+}
+.emptynote:empty { display: none; }
+
+/* ============================================================
+   全局搜索 / 通知中心 面板（0.2.8-t1）
+   与 #confirm 同一类陷阱：.panel 不在 .gate 里，`.panel{display:flex}`
+   会盖掉 [hidden] 的 UA 样式 → 必须有专属的 [hidden] 兜底，不能省。
+   ============================================================ */
+.panel { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-start;
+  justify-content: center; padding: var(--s5); background: var(--md-scrim); }
+.panel[hidden] { display: none; }
+.panel__dialog {
+  display: flex; flex-direction: column;
+  width: 100%; max-width: 560px; max-height: 100%;
+  margin: auto 0;
+  background: var(--md-surface-container-lowest);
+  border-radius: var(--shape-xl);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+.panel__head { display: flex; align-items: center; gap: var(--s2);
+  padding: var(--s4) var(--s4) 0; }
+.panel__title {
+  flex: 1; min-width: 0; margin: 0;
+  color: var(--md-on-surface);
+  font: var(--w-medium) var(--title-m) / var(--title-m-lh) var(--font);
+  letter-spacing: var(--title-m-ls);
+}
+.panel__input {
+  margin: var(--s3) var(--s4) 0;
+  padding: 10px var(--s3);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--shape-xs);
+  background: var(--md-surface-container-low);
+  color: var(--md-on-surface);
+  font: var(--w-normal) var(--body-m) / var(--body-m-lh) var(--font);
+  outline: none;
+}
+.panel__input:focus { border-color: var(--md-primary); }
+.panel__hint {
+  margin: var(--s2) var(--s4) 0;
+  color: var(--md-on-surface-variant);
+  font: var(--w-medium) var(--label-m) / var(--label-m-lh) var(--font);
+  letter-spacing: var(--label-m-ls);
+}
+.panel__body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--s3) var(--s4) var(--s4); }
+
+/* 分组标题（好友 / 头像 / 世界 / 群组） */
+.panel__group {
+  margin: var(--s3) 0 var(--s1);
+  color: var(--md-on-surface-variant);
+  font: var(--w-medium) var(--label-m) / var(--label-m-lh) var(--font);
+  letter-spacing: var(--label-m-ls);
+}
+
+/* 结果行 / 通知行：与好友行同形制的可点行 */
+.panelrow { display: flex; align-items: center; gap: var(--s3);
+  width: 100%; padding: var(--s2) var(--s1);
+  border: 0; background: transparent; cursor: pointer; text-align: left;
+  border-radius: var(--shape-s); }
+.panelrow:hover { background: var(--md-surface-container-high); }
+.panelrow--flat { cursor: default; }
+.panelrow--flat:hover { background: transparent; }
+.panelrow__avatar {
+  flex: none; display: grid; place-items: center;
+  width: 40px; height: 40px; border-radius: var(--shape-full);
+  background: var(--md-primary-container); color: var(--md-on-primary-container);
+  font: var(--w-medium) var(--title-m) / 1 var(--font);
+}
+.panelrow__text { flex: 1; min-width: 0; }
+.panelrow__name {
+  color: var(--md-on-surface);
+  font: var(--w-medium) var(--title-s) / var(--title-s-lh) var(--font);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.panelrow__sub {
+  margin-top: 1px;
+  color: var(--md-on-surface-variant);
+  font: var(--w-medium) var(--label-s) / var(--label-s-lh) var(--font);
+  letter-spacing: var(--label-s-ls);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.panelrow__dot { flex: none; width: 8px; height: 8px; border-radius: var(--shape-full);
+  background: var(--md-error); }
+.panelrow__dot[hidden] { display: none; }
+
+/* ---------- 骨架屏：桥模式下真实数据到达前，顶掉静态样例（不出现人名） ---------- */
+.skel { display: flex; align-items: center; gap: var(--s3); padding: var(--s2) var(--s1); }
+.skel__av { flex: none; width: 40px; height: 40px; border-radius: var(--shape-full);
+  background: var(--md-surface-container-high); }
+.skel__lines { flex: 1; min-width: 0; }
+.skel__line { height: 12px; border-radius: var(--shape-full);
+  background: var(--md-surface-container-high); }
+.skel__line + .skel__line { margin-top: var(--s2); width: 62%; }
+.skel__av, .skel__line { animation: skel-pulse 1.4s ease-in-out infinite; }
+@keyframes skel-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+/* ============================================================
+   工具屏（0.2.9-t1）：游戏日志 / 房间历史 / 浏览历史 / 群组
+   「更多」页的二级导航 = 分组列表行（与个人页的 kv 卡同一语言）；
+   子屏行卡片复用 .card / .rowline / .name / .kind / .time / .body。
+   ============================================================ */
+.toolgroup { padding: 4px 16px 10px; margin-bottom: var(--s3); }
+.toolgroup .sectionhead { padding-top: 8px; }
+.toolnav {
+  display: flex; align-items: center; gap: var(--s3);
+  width: 100%; padding: 10px 2px;
+  border: 0; background: transparent; cursor: pointer; text-align: left;
+  border-top: 1px solid var(--md-outline-variant);
+}
+.toolnav:first-of-type { border-top: 0; }
+.toolnav:hover .toolnav__title { color: var(--md-primary); }
+.toolnav__icon {
+  flex: none; display: grid; place-items: center;
+  width: 40px; height: 40px; border-radius: var(--shape-full);
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+}
+.toolnav__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.toolnav__title {
+  color: var(--md-on-surface);
+  font: var(--w-medium) var(--title-s) / var(--title-s-lh) var(--font);
+}
+.toolnav__sub {
+  margin-top: 1px;
+  color: var(--md-on-surface-variant);
+  font: var(--w-medium) var(--label-s) / var(--label-s-lh) var(--font);
+  letter-spacing: var(--label-s-ls);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.toolnav__chev { flex: none; color: var(--md-on-surface-variant); display: grid; place-items: center; }
+
+.toolrow { padding: 10px 14px; }
+.toolrow .rowline { justify-content: space-between; }
+.toolrow__sub {
+  margin-top: 3px;
+  color: var(--md-on-surface-variant);
+  font: var(--w-medium) var(--label-s) / var(--label-s-lh) var(--font);
+  letter-spacing: var(--label-s-ls);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---------- 0.2.10：详情备注 / 数据页的小件 ---------- */
+.btn--sm { padding: 2px 10px; font: var(--w-medium) var(--label-m) / var(--label-m-lh) var(--font); }
+.labelrow { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
+.field textarea {
+  width: 100%; border: 0; background: transparent; resize: vertical;
+  color: var(--md-on-surface);
+  font: var(--w-normal) var(--body-m) / var(--body-m-lh) var(--font);
+  outline: none; padding: 0;
+}
+/* 活动时段：24 根小时柱 */
+.hourbars { display: flex; align-items: flex-end; gap: 3px; height: 88px; margin-top: var(--s2); }
+.hourbars .bar {
+  flex: 1; min-width: 0; height: calc(var(--v) * 1%); min-height: 2px;
+  background: var(--md-primary); border-radius: 3px 3px 0 0; opacity: 0.85;
+}
+.houraxis { display: flex; justify-content: space-between; margin-top: 4px;
+  color: var(--md-on-surface-variant);
+  font: var(--w-medium) var(--label-s) / var(--label-s-lh) var(--font);
+  letter-spacing: var(--label-s-ls); }
+.rankrow { display: flex; align-items: center; gap: var(--s3); padding: var(--s2) 0; }
+.rankrow__n {
+  flex: none; width: 26px; text-align: center;
+  color: var(--md-on-surface-variant);
+  font: var(--w-medium) var(--title-m) / var(--title-m-lh) var(--font-mono);
+}
+.rankrow__name { flex: 1; min-width: 0; }
+.rankrow__time { flex: none; color: var(--md-on-surface-variant);
+  font: var(--w-medium) var(--label-m) / var(--label-m-lh) var(--font); }
+/* 搜索面板的档位切换 chips */
+.panel__chips { display: flex; gap: var(--s2); padding: 0 var(--s4); margin-top: var(--s2); }
+
+/* 顶栏「更多」按钮：只在没有侧边导轨的紧凑档出现（导轨里本来就有第六项）。 */
+.toolbtn { display: none; }
+@container app (max-width: 599px) {
+  .toolbtn { display: grid; }
+}
+
+/* 收藏好友星标（好友列表置顶的那批） */
+.favstar {
+  margin-left: 5px;
+  color: var(--presence-active);
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+/* chips 行横向滚动：窄屏上放不下的（如好友筛选第 5 颗）能滑出来，不再被裁 */
+.chipstrip { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.chipstrip::-webkit-scrollbar { display: none; }
+
+/* 共同好友图：抓取进度条 */
+.graphbar {
+  height: 10px; border-radius: var(--shape-full); overflow: hidden;
+  background: var(--md-surface-container-high); margin: var(--s2) 0;
+}
+.graphbar__fill {
+  display: block; height: 100%; width: 0;
+  background: var(--md-primary); border-radius: var(--shape-full);
+  transition: width 0.4s ease;
+}
+
+/* 世界详情弹层（0.2.19）：缩略图头图 + 键值行 + 描述 */
+.worldhero {
+  display: flex; align-items: center; justify-content: center;
+  height: 120px; border-radius: var(--shape-m);
+  background: var(--md-primary-container); color: var(--md-on-primary-container);
+  font: var(--w-medium) var(--title-l) / 1.2 var(--font);
+  text-align: center; padding: var(--s3);
+  margin-top: var(--s2);
+  background-size: cover; background-position: center;
+}
+.worlddesc {
+  margin-top: var(--s3);
+  color: var(--md-on-surface-variant);
+  font: var(--w-normal) var(--body-m) / var(--body-m-lh) var(--font);
+  white-space: pre-line;
+}
+/* 可点的分组头（世界详情入口）：给出"能点"的视觉提示 */
+button.roomhead {
+  width: 100%; border: 0; background: transparent; cursor: pointer;
+  text-align: left; padding: 6px 0 2px; border-radius: var(--shape-s);
+}
+button.roomhead:hover { background: var(--md-surface-container-high); }
+
+/* ---- 可点的 kv 行（个人页：当前模型 / 人称代词 / 状态文字）----
+   整行是一个按钮。⚠️ 必须显式清掉 <button> 的 UA 样式（背景/边框/字体/居中），
+   否则它会变成一块灰底方框，跟上面那几行只读的 .kv 完全对不齐。
+   ⚠️ `[hidden]` 的 display:none 会被 `.kv{display:flex}` 盖掉 —— 本文件已经为
+   .sectionhead / .favgrid 踩过一次同类坑，这里必须再补一条。 */
+.kv--act {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--shape-s);
+}
+.kv--act:active { background: var(--md-surface-container-high); }
+.kv--act[hidden] { display: none; }
+
+/* 就地编辑表单（点开可点的 kv 行后插在它下面） */
+.kvedit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  align-items: center;
+  padding: 8px 0;
+}
+.kvedit__input {
+  flex: 1 1 100%;
+  min-width: 0;
+  height: var(--field-h);
+  padding: 0 var(--s4);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--shape-xs);
+  background: transparent;
+  color: var(--md-on-surface);
+  font: var(--w-normal) var(--body-m) / var(--body-m-lh) var(--font);
+}
+.kvedit__input:focus { outline: 0; border-color: var(--md-primary); }
+
+/* ============================================================
+   兜底：禁止双指捏合缩放 / 双击缩放
+   注意 touch-action **默认值就是允许捏合**（`auto` 里含 pinch-zoom）——
+   `pan-x pan-y` 只留平移，等于把 pinch-zoom 和双击缩放一起摘掉。
+   viewport meta 里的 user-scalable=no 是主刀（WebView 认它），
+   这里是第二道：有些内嵌浏览器/旧 WebView 只认 CSS。 */
+html, body { touch-action: pan-x pan-y; }
+/* 画布/抽屉这类自己处理手势的元素别再被浏览器抢走 */
+canvas, .detail, .panel__dialog { touch-action: pan-x pan-y; }
+
+/* 详情列占位（双栏档、未选中好友时）：引导 + 统计，填掉右侧空白 */
+.detail__placeholder {
+  display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; padding: var(--s6); text-align: center;
+}
+.detail__placeholder-icon {
+  display: grid; place-items: center;
+  width: 72px; height: 72px; border-radius: var(--shape-full);
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+  margin-bottom: var(--s3);
+}
+.detail__placeholder-title {
+  margin: 0 0 var(--s1);
+  color: var(--md-on-surface);
+  font: var(--w-medium) var(--title-m) / var(--title-m-lh) var(--font);
+}
+.detail__ph-stats {
+  margin-top: var(--s5); width: 100%; max-width: 420px;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+.detail__ph-stats .stat {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+
+/* ============================================================
+   动效（2026-09-29：用户反馈"太干脆了"）
+   ------------------------------------------------------------
+   ⚠️⚠️ 只动 **opacity / transform**，且只用 **@keyframes animation**，
+   不给任何"容器查询会改的属性"挂 transition：
+     容器查询会在首帧把值从 A 改成 B；若该属性上已经存在 transition，
+     计算值会被**永久冻在过渡起点**（本项目流水线里的教训，见本文件开头
+     `--rail-w` 处 与 `html.ready .detail` 的守卫）。
+     840px 容器查询块里改过 background / box-shadow / padding / border-radius /
+     border，所以这些都**不能**挂 transition。
+   ⚠️ animation（而非 transition）也顺带解决另一个问题：
+     列表容器是 HTML 里固定的节点，实时流刷新只 clear 它的子节点、不重建容器
+     → animation 不会在每次数据推送时重播（那样会整屏闪）。
+     而切/隐藏后再显示列表时会重播一次，正好就是"切过去"想要的效果。
+   降级：tokens.css 里 `@media (prefers-reduced-motion: reduce)` 已全局把
+   animation-duration 压到 0.01ms，这里不用再写一遍。 */
+@keyframes list-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes row-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* 列表容器：整块淡入上移。
+   这五个 id 是 index.html 里真实存在的（225 / 314 / 1223 行与 tools 页），
+   不要凭印象加 id —— 选择器打错就是一条永远不生效的死规则。 */
+#friendList, #feedList, #notifList,
+#glList, #ihList, #bhList, #grList, #homeLatest {
+  animation: list-in var(--motion-std) var(--ease) both;
+}
+/* 列表内的行：轻微错峰。只排前 10 行，后面的同时到位——
+   再多也看不出差别，反而拖慢首屏。 */
+#friendList > *, #feedList > *, #notifList > *,
+#glList > *, #ihList > *, #bhList > *, #grList > *, #homeLatest > * {
+  animation: row-in var(--motion-std) var(--ease) both;
+}
+#friendList > *:nth-child(1),  #feedList > *:nth-child(1)  { animation-delay: 0ms; }
+#friendList > *:nth-child(2),  #feedList > *:nth-child(2)  { animation-delay: 24ms; }
+#friendList > *:nth-child(3),  #feedList > *:nth-child(3)  { animation-delay: 48ms; }
+#friendList > *:nth-child(4),  #feedList > *:nth-child(4)  { animation-delay: 72ms; }
+#friendList > *:nth-child(5),  #feedList > *:nth-child(5)  { animation-delay: 96ms; }
+#friendList > *:nth-child(6),  #feedList > *:nth-child(6)  { animation-delay: 120ms; }
+#friendList > *:nth-child(7),  #feedList > *:nth-child(7)  { animation-delay: 144ms; }
+#friendList > *:nth-child(8),  #feedList > *:nth-child(8)  { animation-delay: 168ms; }
+#friendList > *:nth-child(9),  #feedList > *:nth-child(9)  { animation-delay: 192ms; }
+#friendList > *:nth-child(10), #feedList > *:nth-child(10) { animation-delay: 216ms; }
+
+/* 面板 / 详情：弹入（比列表更"强调了"一点，因为它是覆盖层） */
+#notifPanel:not([hidden]), .detail__body {
+  animation: pop-in var(--motion-std) var(--ease) both;
+}
+
+/* 按压反馈。transform 不会被容器查询改，安全。
+   ⚠️ 触摸设备上 `:active` 在手指按住期间成立，松开即回弹 —— 正是要的效果。
+   已去掉 -webkit-tap-highlight-color，这里补上"看得见的按下"。 */
+.card:active, .btn:active, .chip:active, .iconbtn:active {
+  transform: scale(0.975);
+}
+.card, .btn, .chip, .iconbtn {
+  transition: transform var(--motion-fast) var(--ease);
+}
+/* 抬起时留一点点余韵，避免"啪"一下弹回去 */
+@media (hover: hover) {
+  .card:hover { box-shadow: var(--elev-1); }
+}
+
+/* 「降低动效」（swReduceMotion）落下we的位置：screens.js 给 <html> 加 .no-motion。
+   跟 prefers-reduced-motion 的区别：那个是跟随系统、全局压到 0.01ms；
+   这个是**用户在 App 里主动关掉**的，所以连 transform 的余韵也一并去掉。
+   两个机制互相独立，任一命中都不播。 */
+html.no-motion #friendList, html.no-motion #friendList > *,
+html.no-motion #feedList,   html.no-motion #feedList > *,
+html.no-motion #notifList,  html.no-motion #notifList > *,
+html.no-motion #glList, html.no-motion #ihList,
+html.no-motion #bhList, html.no-motion #grList,
+html.no-motion #homeLatest, html.no-motion .detail__body,
+html.no-motion #notifPanel {
+  animation: none !important;
+}
+html.no-motion .card:active, html.no-motion .btn:active,
+html.no-motion .chip:active, html.no-motion .iconbtn:active {
+  transform: none !important;
+}
+html.no-motion .card, html.no-motion .btn,
+html.no-motion .chip, html.no-motion .iconbtn {
+  transition: none !important;
+}
+
+/* ============================================================
+   通知详情 + 戳一戳表情选择（2026-09-29）
+   ============================================================ */
+.notifd__kind {
+  display: inline-block;
+  padding: 2px 10px; border-radius: var(--shape-full);
+  background: var(--md-secondary-container);
+  color: var(--md-on-secondary-container);
+  font: var(--w-medium) var(--label-s) / var(--label-s-lh) var(--font);
+}
+.notifd__who {
+  margin-top: var(--s2);
+  font: var(--w-medium) var(--title-m) / var(--title-m-lh) var(--font);
+}
+.notifd__text {
+  margin-top: var(--s2);
+  color: var(--md-on-surface);
+  font: var(--w-normal) var(--body-m) / var(--body-m-lh) var(--font);
+  white-space: pre-wrap;          /* VRChat 的通知正文有换行 */
+  word-break: break-word;
+}
+.notifd__meta {
+  margin-top: var(--s2);
+  color: var(--md-on-surface-variant);
+  font: var(--w-normal) var(--label-m) / var(--label-m-lh) var(--font);
+}
+.notifd__acts { margin-top: var(--s4); }
+
+.emoji-grid {
+  display: grid;
+  gap: var(--s2);
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+}
+.emoji-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: var(--s2) 4px;
+  border: 1px solid transparent; border-radius: var(--shape-m);
+  background: transparent; color: inherit;
+  font-family: inherit; font-size: inherit;
+  cursor: pointer; text-align: center;
+}
+.emoji-cell.is-on {
+  border-color: var(--md-primary);
+  background: var(--md-secondary-container);
+}
+.emoji-cell__pic { width: 44px; height: 44px; flex: none; }
+.emoji-cell__cap {
+  max-width: 100%;
+  color: var(--md-on-surface-variant);
+  font: var(--w-normal) var(--label-s) / var(--label-s-lh) var(--font);
+  word-break: break-word;
+}
+.detail__ph-stats .stat b {
+  color: var(--md-primary);
+  font: var(--w-medium) var(--headline-s) / var(--headline-s-lh) var(--font);
+}
+
+/* 双栏档、未点开详情时显示占位（点了好友则隐藏占位、显示 #detail） */
+@container app (min-width: 840px) and (orientation: landscape) {
+  .app__content:not(.is-wide) .detail__placeholder { display: flex; }
+  .app.detail-open .detail__placeholder { display: none; }
+}
